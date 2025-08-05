@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "latitude-sh": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "cwd": "E:\\mcp-servers\\latitude-sh",
+      "env": {
+        "LATITUDE_API_KEY": "60c6a179d033cbb38d1bcbe6ee87a4f6e6ad"
+      }
+    }
+  }
+}
