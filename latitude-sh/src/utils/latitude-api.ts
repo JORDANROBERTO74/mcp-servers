@@ -28,10 +28,9 @@ export class LatitudeAPIClient {
       baseURL: config.baseURL || "https://api.latitude.sh",
       timeout: config.timeout || 10000,
       headers: {
-        Authorization: this.apiKey, // Sin "Bearer" prefix
+        Authorization: this.apiKey,
         "Content-Type": "application/vnd.api+json",
         Accept: "application/vnd.api+json",
-        "User-Agent": "mcp-server-latitude-sh/0.1.0",
       },
     });
 
@@ -252,21 +251,13 @@ export class LatitudeAPIClient {
           type: "projects",
           attributes: {
             name: projectData.name,
-            provisioning_type: projectData.provisioning_type || "on_demand",
+            provisioning_type: projectData.provisioning_type || "reserved",
             ...(projectData.description && {
               description: projectData.description,
             }),
             ...(projectData.environment && {
               environment: projectData.environment,
             }),
-            ...(projectData.billing_type && {
-              billing_type: projectData.billing_type,
-            }),
-            ...(projectData.billing_method && {
-              billing_method: projectData.billing_method,
-            }),
-            ...(projectData.tags &&
-              projectData.tags.length > 0 && { tags: projectData.tags }),
           },
         },
       };
@@ -326,9 +317,7 @@ export class LatitudeAPIClient {
       name?: string;
       description?: string;
       environment?: string;
-      provisioning_type?: string;
-      billing_type?: string;
-      billing_method?: string;
+      bandwidth_alert?: any;
       tags?: string[];
     }
   ): Promise<LatitudeProjectDetails> {
@@ -345,14 +334,8 @@ export class LatitudeAPIClient {
             ...(projectData.environment && {
               environment: projectData.environment,
             }),
-            ...(projectData.provisioning_type && {
-              provisioning_type: projectData.provisioning_type,
-            }),
-            ...(projectData.billing_type && {
-              billing_type: projectData.billing_type,
-            }),
-            ...(projectData.billing_method && {
-              billing_method: projectData.billing_method,
+            ...(projectData.bandwidth_alert && {
+              bandwidth_alert: projectData.bandwidth_alert,
             }),
             ...(projectData.tags &&
               projectData.tags.length > 0 && { tags: projectData.tags }),

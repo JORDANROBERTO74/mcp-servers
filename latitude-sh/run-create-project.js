@@ -1,15 +1,10 @@
-#!/usr/bin/env node
-
 import { spawn } from "child_process";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
 import readline from "readline";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-console.log("🚀 Interactive Project Creation Tool");
-console.log("=====================================");
+const __dirname = path.dirname(__filename);
 
 // Create readline interface
 const rl = readline.createInterface({
@@ -17,293 +12,169 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-// Function to ask a question
-function askQuestion(question) {
+// Helper function to ask questions
+function askQuestion(question, defaultValue = "") {
   return new Promise((resolve) => {
-    rl.question(question, (answer) => {
-      resolve(answer.trim());
+    const prompt = defaultValue
+      ? `${question} [default: ${defaultValue}]: `
+      : `${question}: `;
+    rl.question(prompt, (answer) => {
+      resolve(answer.trim() || defaultValue);
     });
   });
 }
 
-// Function to ask for required field
-async function askRequiredField(fieldName, description, validator = null) {
-  while (true) {
-    const value = await askQuestion(
-      `📝 ${fieldName} (REQUIRED): ${description}\n> `
+// Helper function to ask for selection
+function askSelection(question, options, defaultValue = "") {
+  return new Promise((resolve) => {
+    console.log(`\n${question}`);
+    options.forEach((option, index) => {
+      const marker = option === defaultValue ? " [default]" : "";
+      console.log(`  ${index + 1}. ${option}${marker}`);
+    });
+
+    const prompt = defaultValue
+      ? `Select option [default: ${defaultValue}]: `
+      : "Select option: ";
+    rl.question(prompt, (answer) => {
+      const selection = answer.trim();
+      if (!selection && defaultValue) {
+        resolve(defaultValue);
+      } else {
+        const index = parseInt(selection) - 1;
+        if (index >= 0 && index < options.length) {
+          resolve(options[index]);
+        } else {
+          console.log("❌ Invalid selection. Please try again.");
+          resolve(askSelection(question, options, defaultValue));
+        }
+      }
+    });
+  });
+}
+
+// Main function
+async function createProject() {
+  console.log("🚀 Dynamic Project Creation Tool");
+  console.log("=====================================\n");
+
+  try {
+    // Get project details
+    const name = await askQuestion("📝 Project Name (REQUIRED)", "");
+    if (!name) {
+      console.log("❌ Project name is required!");
+      rl.close();
+      return;
+    }
+
+    const description = await askQuestion("📝 Description (OPTIONAL)", "");
+
+    const environment = await askSelection(
+      "🌍 Environment Type (OPTIONAL)",
+      ["Development", "Production", "Staging"],
+      "Development"
     );
 
-    if (!value) {
-      console.log("❌ This field is required. Please provide a value.");
-      continue;
+    const provisioningType = await askSelection(
+      "⚙️ Provisioning Type (OPTIONAL)",
+      ["reserved", "on_demand"],
+      "reserved"
+    );
+
+    // Build project configuration
+    const projectConfig = {
+      name,
+      ...(description && { description }),
+      environment,
+      provisioning_type: provisioningType,
+    };
+
+    // Show summary
+    console.log("\n📋 Project Data Summary:");
+    console.log("=========================");
+    console.log(`Name: ${projectConfig.name}`);
+    console.log(
+      `Description: ${projectConfig.description || "No description"}`
+    );
+    console.log(`Environment: ${projectConfig.environment}`);
+    console.log(`Provisioning Type: ${projectConfig.provisioning_type}`);
+
+    // Confirm creation
+    const proceed = await askQuestion(
+      "\n✅ Proceed with project creation? (y/n)",
+      "y"
+    );
+    if (proceed.toLowerCase() !== "y" && proceed.toLowerCase() !== "yes") {
+      console.log("❌ Project creation cancelled.");
+      rl.close();
+      return;
     }
 
-    if (validator && !validator(value)) {
-      console.log("❌ Invalid value. Please try again.");
-      continue;
-    }
-
-    return value;
-  }
-}
-
-// Function to ask for optional field
-async function askOptionalField(
-  fieldName,
-  description,
-  defaultValue = null,
-  validator = null
-) {
-  const value = await askQuestion(
-    `📝 ${fieldName} (OPTIONAL)${
-      defaultValue ? ` [default: ${defaultValue}]` : ""
-    }: ${description}\n> `
-  );
-
-  if (!value) {
-    return defaultValue;
-  }
-
-  if (validator && !validator(value)) {
-    console.log("❌ Invalid value. Using default.");
-    return defaultValue;
-  }
-
-  return value;
-}
-
-// Function to ask for enum field
-async function askEnumField(fieldName, description, options, defaultValue) {
-  console.log(`📝 ${fieldName} (OPTIONAL): ${description}`);
-  console.log(`   Options: ${options.join(", ")}`);
-
-  const value = await askQuestion(`   [default: ${defaultValue}] > `);
-
-  if (!value) {
-    return defaultValue;
-  }
-
-  if (!options.includes(value)) {
-    console.log(`❌ Invalid option. Using default: ${defaultValue}`);
-    return defaultValue;
-  }
-
-  return value;
-}
-
-// Function to ask for tags
-async function askTags() {
-  const tagsInput = await askQuestion(
-    "📝 Tags (OPTIONAL): Enter tags separated by commas\n> "
-  );
-
-  if (!tagsInput) {
-    return undefined;
-  }
-
-  const tags = tagsInput
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter((tag) => tag.length > 0);
-  return tags.length > 0 ? tags : undefined;
-}
-
-// Main function to collect project data
-async function collectProjectData() {
-  console.log("\n🎯 Let's create a new project!");
-  console.log("Please provide the following information:\n");
-
-  // Required fields
-  const name = await askRequiredField(
-    "Project Name",
-    "Enter the name of the project (1-100 characters)"
-  );
-
-  // Optional fields
-  const description = await askOptionalField(
-    "Description",
-    "Enter project description (max 500 characters)"
-  );
-
-  const environment = await askEnumField(
-    "Environment",
-    "Select environment type",
-    ["Development", "Production", "Staging"],
-    "Development"
-  );
-
-  const provisioningType = await askEnumField(
-    "Provisioning Type",
-    "Select provisioning type",
-    ["on_demand", "reserved"],
-    "on_demand"
-  );
-
-  const billingType = await askEnumField(
-    "Billing Type",
-    "Select billing type",
-    ["Normal", "Enterprise"],
-    "Normal"
-  );
-
-  const billingMethod = await askEnumField(
-    "Billing Method",
-    "Select billing method",
-    ["Normal", "Enterprise"],
-    "Normal"
-  );
-
-  const tags = await askTags();
-
-  // Build the project data
-  const projectData = {
-    name,
-    ...(description && { description }),
-    environment,
-    provisioning_type: provisioningType,
-    billing_type: billingType,
-    billing_method: billingMethod,
-    ...(tags && tags.length > 0 && { tags }),
-  };
-
-  console.log("\n📋 Project Data Summary:");
-  console.log("=========================");
-  console.log(`Name: ${projectData.name}`);
-  console.log(`Description: ${projectData.description || "None"}`);
-  console.log(`Environment: ${projectData.environment}`);
-  console.log(`Provisioning Type: ${projectData.provisioning_type}`);
-  console.log(`Billing Type: ${projectData.billing_type}`);
-  console.log(`Billing Method: ${projectData.billing_method}`);
-  console.log(
-    `Tags: ${projectData.tags ? projectData.tags.join(", ") : "None"}`
-  );
-
-  const confirm = await askQuestion(
-    "\n✅ Proceed with project creation? (y/n): "
-  );
-
-  if (confirm.toLowerCase() !== "y" && confirm.toLowerCase() !== "yes") {
-    console.log("❌ Project creation cancelled.");
-    rl.close();
-    return null;
-  }
-
-  return projectData;
-}
-
-// Function to send request to MCP server
-async function sendToMCPServer(projectData) {
-  return new Promise((resolve, reject) => {
+    // Create MCP server process
     console.log("\n🚀 Sending request to MCP server...");
-
-    // Spawn the server process
-    const serverProcess = spawn("node", ["dist/index.js"], {
+    const mcpProcess = spawn("node", ["dist/index.js"], {
       stdio: ["pipe", "pipe", "pipe"],
       cwd: __dirname,
     });
 
-    let response = null;
+    let output = "";
+    let errorOutput = "";
 
-    // Capture server output
-    serverProcess.stdout.on("data", (data) => {
-      const output = data.toString().trim();
-      if (output) {
-        try {
-          const parsed = JSON.parse(output);
-          if (parsed.result && parsed.result.content) {
-            response = parsed.result.content[0].text;
-            console.log("\n📋 Server Response:");
-            console.log(response);
-          } else if (parsed.error) {
-            response = `Error: ${parsed.error}`;
-            console.log("\n❌ Server Error:");
-            console.log(response);
-          }
-        } catch (e) {
-          // Not JSON, just log as is
+    mcpProcess.stdout.on("data", (data) => {
+      output += data.toString();
+    });
+
+    mcpProcess.stderr.on("data", (data) => {
+      errorOutput += data.toString();
+    });
+
+    mcpProcess.on("close", (code) => {
+      console.log("\n📋 Server Response:");
+
+      try {
+        const response = JSON.parse(output);
+        if (response.result?.content?.[0]?.text) {
+          console.log(response.result.content[0].text);
+        } else {
+          console.log("❌ Unexpected response format");
+          console.log("Raw response:", output);
         }
+      } catch (error) {
+        console.log("❌ Error parsing response");
+        console.log("Raw output:", output);
       }
-    });
 
-    serverProcess.stderr.on("data", (data) => {
-      const output = data.toString().trim();
-      if (output && !output.includes("Successfully connected")) {
-        console.log("📤 Server stderr:", output);
+      if (code !== 0) {
+        console.log(`❌ Server process exited with code ${code}`);
       }
+
+      rl.close();
     });
 
-    serverProcess.on("error", (error) => {
-      reject(error);
-    });
-
-    serverProcess.on("exit", (code, signal) => {
-      if (code === 0) {
-        resolve(response);
-      } else {
-        reject(new Error(`Server exited with code ${code}`));
-      }
-    });
-
-    // Send the request after a short delay
+    // Wait for server to start, then send request
     setTimeout(() => {
-      const createProjectMessage =
-        JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "tools/call",
-          params: {
-            name: "create_project",
-            arguments: projectData,
-          },
-        }) + "\n";
+      const request = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+          name: "create_project",
+          arguments: projectConfig,
+        },
+      };
 
-      serverProcess.stdin.write(createProjectMessage);
+      mcpProcess.stdin.write(JSON.stringify(request) + "\n");
 
-      // Terminate after response
+      // Close stdin after sending request
       setTimeout(() => {
-        serverProcess.kill("SIGTERM");
-      }, 3000);
+        mcpProcess.stdin.end();
+      }, 1000);
     }, 2000);
-  });
-}
-
-// Main execution
-async function main() {
-  try {
-    const projectData = await collectProjectData();
-
-    if (!projectData) {
-      return;
-    }
-
-    const result = await sendToMCPServer(projectData);
-
-    if (result && !result.includes("Error:")) {
-      console.log("\n🎉 Project creation completed successfully!");
-    } else {
-      console.log(
-        "\n❌ Project creation failed. Check the error message above."
-      );
-    }
   } catch (error) {
     console.error("❌ Error:", error.message);
-  } finally {
     rl.close();
   }
 }
 
-// Handle process termination
-process.on("SIGINT", () => {
-  console.log("\n🛑 Received SIGINT, terminating...");
-  rl.close();
-  process.exit(0);
-});
-
-process.on("SIGTERM", () => {
-  console.log("\n🛑 Received SIGTERM, terminating...");
-  rl.close();
-  process.exit(0);
-});
-
-// Start the interactive tool
-main();
+// Start the application
+createProject();

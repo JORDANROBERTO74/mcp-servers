@@ -117,7 +117,7 @@ const CreateProjectArgsSchema = z.object({
   provisioning_type: z
     .enum(["on_demand", "reserved"])
     .optional()
-    .default("on_demand")
+    .default("reserved")
     .describe("Provisioning type for the project (OPTIONAL)"),
   billing_type: z
     .enum(["Normal", "Enterprise"])
@@ -159,18 +159,10 @@ const UpdateProjectArgsSchema = z.object({
     .enum(["Development", "Production", "Staging"])
     .optional()
     .describe("New environment type for the project (OPTIONAL)"),
-  provisioning_type: z
-    .enum(["on_demand", "reserved"])
+  bandwidth_alert: z
+    .any()
     .optional()
-    .describe("New provisioning type for the project (OPTIONAL)"),
-  billing_type: z
-    .enum(["Normal", "Enterprise"])
-    .optional()
-    .describe("New billing type for the project (OPTIONAL)"),
-  billing_method: z
-    .enum(["Normal", "Enterprise"])
-    .optional()
-    .describe("New billing method for the project (OPTIONAL)"),
+    .describe("Bandwidth alert settings for the project (OPTIONAL)"),
   tags: z
     .array(z.string().min(1).max(50))
     .optional()
