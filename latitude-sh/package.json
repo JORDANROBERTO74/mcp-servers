@@ -1,0 +1,36 @@
+{
+  "name": "@modelcontextprotocol/server-latitude-sh",
+  "version": "0.1.0",
+  "description": "MCP server for latitude.sh project access",
+  "license": "MIT",
+  "author": "Your Name",
+  "homepage": "https://modelcontextprotocol.io",
+  "type": "module",
+  "bin": {
+    "mcp-server-latitude-sh": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc && shx chmod +x dist/*.js",
+    "prepare": "npm run build",
+    "watch": "tsc --watch",
+    "dev": "tsx src/index.ts",
+    "test": "node test-server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.0",
+    "axios": "^1.6.0",
+    "dotenv": "^16.4.5",
+    "zod": "^3.22.4",
+    "zod-to-json-schema": "^3.23.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "shx": "^0.3.4",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.2"
+  }
+}
