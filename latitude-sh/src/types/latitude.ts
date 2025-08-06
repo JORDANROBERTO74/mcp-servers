@@ -1,24 +1,46 @@
 export interface LatitudeProject {
   id: string;
-  name: string;
-  description?: string;
-  createdAt: string;
-  updatedAt: string;
-  status: "active" | "inactive" | "archived";
-  owner: {
-    id: string;
+  type: string;
+  attributes: {
+    tags: string[];
     name: string;
-    email: string;
-  };
-  collaborators?: Array<{
-    id: string;
-    name: string;
-    email: string;
-    role: "owner" | "admin" | "member";
-  }>;
-  settings?: {
-    visibility: "public" | "private";
-    allowComments: boolean;
+    slug: string;
+    description?: string;
+    billing_type: string;
+    billing_method: string;
+    bandwidth_alert: boolean;
+    environment: string;
+    provisioning_type: string;
+    billing: {
+      subscription_id: string;
+      type: string;
+      method: string;
+    };
+    team: {
+      id: string;
+      name: string;
+      slug: string;
+      description: string | null;
+      address: string | null;
+      currency: {
+        id: string;
+        code: string;
+        name: string;
+      };
+      status: string;
+      feature_flags: string[];
+    };
+    stats: {
+      databases: number;
+      ip_addresses: number;
+      prefixes: number;
+      servers: number;
+      storages: number;
+      virtual_machines: number;
+      vlans: number;
+    };
+    created_at: string;
+    updated_at: string;
   };
 }
 
@@ -60,49 +82,135 @@ export interface LatitudeAPIConfig {
 }
 
 export interface ProjectSearchParams {
-  query?: string;
+  // Pagination
+  "page[size]"?: number;
+  "page[number]"?: number;
+
+  // Basic filters
   status?: "active" | "inactive" | "archived";
   owner?: string;
-  tags?: string[];
+
+  // Advanced filters
+  "filter[name]"?: string;
+  "filter[slug]"?: string;
+  "filter[description]"?: string;
+  "filter[billing_type]"?: string;
+  "filter[environment]"?: string;
+  "filter[tags]"?: string; // Comma-separated string
+
+  // Extra fields
+  "extra_fields[projects]"?: string; // last_renewal_date,next_renewal_date
+
+  // Legacy support (for backward compatibility)
   limit?: number;
   page?: number;
+  tags?: string[];
+  query?: string;
 }
 
 // Server Types
 export interface LatitudeServer {
   id: string;
-  name: string;
-  description?: string;
-  createdAt: string;
-  updatedAt: string;
-  status: "running" | "stopped" | "starting" | "stopping" | "error" | "deleted";
-  projectId: string;
-  region: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-  plan: {
-    id: string;
-    name: string;
-    slug: string;
+  type: string;
+  attributes: {
+    tags: string[];
+    hostname: string;
+    label: string;
     price: number;
-    currency: string;
-  };
-  ipAddress?: string;
-  privateIpAddress?: string;
-  sshKeys?: Array<{
-    id: string;
-    name: string;
-    publicKey: string;
-  }>;
-  tags?: string[];
-  metadata?: {
-    os: string;
-    cpu: number;
-    memory: number;
-    disk: number;
-    bandwidth: number;
+    role: string;
+    primary_ipv4: string;
+    primary_ipv6?: string;
+    status: "on" | "off" | "rebooting" | "provisioning" | "deleted";
+    ipmi_status: string;
+    created_at: string;
+    scheduled_deletion_at: string | null;
+    locked: boolean;
+    rescue_allowed: boolean;
+    region: {
+      city: string;
+      country: string;
+      site: {
+        id: string;
+        name: string;
+        slug: string;
+        facility: string;
+        rack_id: string;
+      };
+    };
+    team: {
+      id: string;
+      name: string;
+      slug: string;
+      description: string | null;
+      address: string | null;
+      currency: {
+        id: string;
+        code: string;
+        name: string;
+      };
+      status: string;
+      feature_flags: string[];
+    };
+    project: {
+      id: string;
+      name: string;
+      slug: string;
+      description: string | null;
+      provisioning_type: string;
+      billing_type: string;
+      billing_method: string;
+      bandwidth_alert: boolean;
+      environment: string | null;
+      billing: {
+        subscription_id: string;
+        type: string;
+        method: string;
+      };
+      stats: {
+        databases: number;
+        ip_addresses: number;
+        prefixes: number;
+        servers: number;
+        storages: number;
+        virtual_machines: number;
+        vlans: number;
+      };
+    };
+    plan: {
+      id: string;
+      name: string;
+      slug: string;
+      billing: string;
+    };
+    interfaces: Array<{
+      role: string;
+      name: string;
+      mac_address: string;
+      description: string;
+    }>;
+    operating_system: {
+      name: string;
+      slug: string;
+      version: string;
+      features: {
+        raid: boolean;
+        rescue: boolean;
+        ssh_keys: boolean;
+        user_data: boolean;
+      };
+      distro: {
+        name: string;
+        slug: string;
+        series: string;
+      };
+    };
+    specs: {
+      cpu: string;
+      disk: string;
+      ram: string;
+      nic: string;
+      gpu: string | null;
+    };
   };
 }
 
@@ -114,53 +222,59 @@ export interface LatitudeServerList {
 }
 
 export interface LatitudeServerDetails extends LatitudeServer {
-  specs?: {
-    cpu: number;
-    memory: number;
-    disk: number;
-    bandwidth: number;
+  // Additional metadata that might be added by the API client
+  metadata?: {
+    tags: string[];
+    category: string;
+    framework?: string;
+    language?: string;
   };
-  network?: {
-    publicIp: string;
-    privateIp?: string;
-    gateway?: string;
-    netmask?: string;
-  };
-  os?: {
-    name: string;
-    version: string;
-    architecture: string;
-  };
-  actions?: Array<{
-    id: string;
-    name: string;
-    status: "pending" | "running" | "completed" | "failed";
-    createdAt: string;
-  }>;
 }
 
 export interface ServerSearchParams {
+  // Pagination
+  "page[size]"?: number;
+  "page[number]"?: number;
+
+  // Basic filters
+  status?: "on" | "off" | "rebooting" | "provisioning" | "deleted";
   projectId?: string;
-  status?:
-    | "running"
-    | "stopped"
-    | "starting"
-    | "stopping"
-    | "error"
-    | "deleted";
+
+  // Advanced filters
+  "filter[project]"?: string; // Project ID or Slug
+  "filter[region]"?: string; // Region Slug
+  "filter[hostname]"?: string; // Server hostname
+  "filter[created_at_gte]"?: string; // Created at greater than equal date
+  "filter[created_at_lte]"?: string; // Created at less than equal date
+  "filter[label]"?: string; // Server label
+  "filter[status]"?: string; // Server status
+  "filter[plan]"?: string; // Platform/plan name
+  "filter[gpu]"?: boolean; // Filter by GPU existence
+  "filter[ram][eql]"?: number; // RAM size equals (in GB)
+  "filter[ram][gte]"?: number; // RAM size greater than or equal (in GB)
+  "filter[ram][lte]"?: number; // RAM size less than or equal (in GB)
+  "filter[disk][eql]"?: number; // Disk size equals (in GB)
+  "filter[disk][gte]"?: number; // Disk size greater than or equal (in GB)
+  "filter[disk][lte]"?: number; // Disk size less than or equal (in GB)
+  "filter[tags]"?: string; // Tags IDs separated by comma
+
+  // Extra fields
+  "extra_fields[servers]"?: string; // credentials
+
+  // Legacy support (for backward compatibility)
+  limit?: number;
+  page?: number;
   region?: string;
   plan?: string;
   tags?: string[];
-  limit?: number;
-  page?: number;
 }
 
 export interface CreateServerParams {
-  name: string;
-  projectId: string;
-  regionId: string;
-  planId: string;
-  description?: string;
+  project: string;
+  plan: string;
+  operating_system: string;
+  hostname: string;
+  site: string;
   sshKeys?: string[];
   tags?: string[];
   userData?: string;
@@ -168,116 +282,142 @@ export interface CreateServerParams {
 }
 
 export interface UpdateServerParams {
-  name?: string;
-  description?: string;
+  hostname?: string;
+  billing?: "hourly" | "monthly" | "yearly";
   tags?: string[];
+  project?: string;
 }
 
 // API Response Types for Latitude.sh
-export interface LatitudeAPIProjectData {
-  id: string;
-  type: string;
-  attributes: {
-    name: string;
-    description?: string;
-    created_at: string;
-    updated_at: string;
-    team?: {
-      id: string;
-      name: string;
-    };
-    tags?: string[];
-    environment?: string;
-    provisioning_type?: string;
-    billing_type?: string;
-    billing_method?: string;
-  };
-}
-
 export interface LatitudeAPIProjectResponse {
-  data: LatitudeAPIProjectData;
+  data: LatitudeProject;
 }
 
 export interface LatitudeAPIProjectsResponse {
-  data: LatitudeAPIProjectData[];
-}
-
-export interface LatitudeAPIServerData {
-  id: string;
-  type: string;
-  attributes: {
-    name: string;
-    description?: string;
-    created_at: string;
-    updated_at: string;
-    status:
-      | "running"
-      | "stopped"
-      | "starting"
-      | "stopping"
-      | "error"
-      | "deleted";
-    project_id: string;
-    region?: {
-      id: string;
-      name: string;
-      slug: string;
-    };
-    plan?: {
-      id: string;
-      name: string;
-      slug: string;
-      price: number;
-      currency: string;
-    };
-    ip_address?: string;
-    private_ip_address?: string;
-    ssh_keys?: Array<{
-      id: string;
-      name: string;
-      public_key: string;
-    }>;
-    tags?: string[];
-    specs?: {
-      cpu: number;
-      memory: number;
-      disk: number;
-      bandwidth: number;
-    };
-    os?: {
-      name: string;
-      version: string;
-      architecture: string;
-    };
-    network?: {
-      gateway?: string;
-      netmask?: string;
-    };
-    actions?: Array<{
-      id: string;
-      name: string;
-      status: "pending" | "running" | "completed" | "failed";
-      created_at: string;
-    }>;
-  };
+  data: LatitudeProject[];
 }
 
 export interface LatitudeAPIServerResponse {
-  data: LatitudeAPIServerData;
+  data: LatitudeServer;
 }
 
 export interface LatitudeAPIServersResponse {
-  data: LatitudeAPIServerData[];
+  data: LatitudeServer[];
 }
 
 export interface LatitudeAPIParams {
+  // Pagination
   "page[size]"?: number;
   "page[number]"?: number;
+
+  // Basic filters
   status?: string;
   owner?: string;
+
+  // Advanced filters for projects
+  "filter[name]"?: string;
+  "filter[slug]"?: string;
+  "filter[description]"?: string;
+  "filter[billing_type]"?: string;
+  "filter[environment]"?: string;
+  "filter[tags]"?: string;
+
+  // Advanced filters for servers
+  "filter[project]"?: string;
+  "filter[region]"?: string;
+  "filter[hostname]"?: string;
+  "filter[created_at_gte]"?: string;
+  "filter[created_at_lte]"?: string;
+  "filter[label]"?: string;
+  "filter[status]"?: string;
+  "filter[plan]"?: string;
+  "filter[gpu]"?: boolean;
+  "filter[ram][eql]"?: number;
+  "filter[ram][gte]"?: number;
+  "filter[ram][lte]"?: number;
+  "filter[disk][eql]"?: number;
+  "filter[disk][gte]"?: number;
+  "filter[disk][lte]"?: number;
+
+  // Extra fields
+  "extra_fields[projects]"?: string;
+  "extra_fields[servers]"?: string;
+
+  // Legacy support
+  limit?: number;
+  page?: number;
   tags?: string;
   query?: string;
   project_id?: string;
   region?: string;
   plan?: string;
+}
+
+// Plan-related interfaces
+export interface LatitudePlanSpecs {
+  cpu: {
+    type: string;
+    clock: number;
+    cores: number;
+    count: number;
+  };
+  memory: {
+    total: number;
+  };
+  drives: Array<{
+    count: number;
+    size: string;
+    type: string;
+  }>;
+  nics: Array<{
+    count: number;
+    type: string;
+  }>;
+  gpu: Record<string, any>;
+}
+
+export interface LatitudePlanRegion {
+  name: string;
+  deploys_instantly: string[];
+  locations: {
+    available: string[];
+    in_stock: string[];
+  };
+  stock_level: string;
+  pricing: {
+    USD: {
+      hour: number;
+      month: number;
+      year: number;
+    };
+    BRL: {
+      hour: number;
+      month: number;
+      year: number;
+    };
+  };
+}
+
+export interface LatitudePlan {
+  id: string;
+  type: string;
+  attributes: {
+    slug: string;
+    name: string;
+    features: string[];
+    specs: LatitudePlanSpecs;
+    regions: LatitudePlanRegion[];
+  };
+}
+
+export interface LatitudePlanList {
+  data: LatitudePlan[];
+  meta?: {
+    pagination?: {
+      current_page: number;
+      per_page: number;
+      total_pages: number;
+      total_count: number;
+    };
+  };
 }

@@ -1,39 +1,99 @@
 # Latitude.sh MCP Server
 
-A Model Context Protocol (MCP) server that provides access to your latitude.sh projects and files.
+A comprehensive Model Context Protocol (MCP) server that provides intelligent access to your Latitude.sh infrastructure, including projects, servers, plans, and smart server creation workflows.
 
-## Features
+## 🚀 Features
 
-### Project Management
+### 📁 Project Management
 
-- 🔍 **List Projects**: Get all projects from your latitude.sh account with filtering and pagination
-- 📁 **Get Project Details**: Retrieve comprehensive information about specific projects
-- 🔎 **Search Projects**: Search through project names, descriptions, and metadata
-- 📂 **Get Project Files**: View the file structure of projects
-- ➕ **Create Projects**: Create new projects with custom settings and metadata
-- ✏️ **Update Projects**: Update existing projects with new settings and metadata
-- 🗑️ **Delete Projects**: Permanently delete projects with confirmation
+- **List Projects**: Get all projects with advanced filtering and pagination
+- **Get Project Details**: Retrieve comprehensive project information
+- **Search Projects**: Search through names, descriptions, and metadata
+- **Get Project Files**: View project file structure
+- **Create Projects**: Create new projects with custom configurations
+- **Update Projects**: Modify existing project settings
+- **Delete Projects**: Remove projects with confirmation protection
 
-### Server Management
+### 🖥️ Server Management
 
-- 🖥️ **List Servers**: Get all servers with filtering by status, project, region, and plan
-- ➕ **Create Servers**: Create new servers with custom specifications and configuration
-- 📋 **Get Server Details**: Retrieve comprehensive server information including specs and network details
-- ✏️ **Update Servers**: Update server properties like name, description, tags, and SSH keys
-- 🗑️ **Delete Servers**: Permanently delete servers with confirmation protection
+- **List Servers**: Get all servers with filtering by status, project, region, plan
+- **Create Servers**: Create servers with specifications and configuration
+- **Get Server Details**: Retrieve comprehensive server information
+- **Update Servers**: Modify server properties and configuration
+- **Delete Servers**: Remove servers with confirmation protection
 
-### General
+### 🧠 Smart Server Creation
 
-- 🔗 **Test Connection**: Verify API connectivity and authentication
+- **Get Server Creation Flow**: Intelligent workflow with real-time validation
+- **Validate Server Config**: Pre-validate configurations before creation
+- **Get Available Plans**: List all plans with specifications and pricing
+- **Get Available Regions**: Check region availability for specific plans
 
-## Installation
+### 🔧 General Tools
 
-1. Clone this repository
-2. Install dependencies:
+- **Test Connection**: Verify API connectivity and authentication
+
+## 📋 Complete Tool List (17 Tools)
+
+| Tool                       | Description                   | Status         |
+| -------------------------- | ----------------------------- | -------------- |
+| `list_projects`            | List projects with filtering  | ✅ Implemented |
+| `get_project`              | Get detailed project info     | ✅ Implemented |
+| `search_projects`          | Search projects by query      | ✅ Implemented |
+| `get_project_files`        | Get project file structure    | ✅ Implemented |
+| `create_project`           | Create new project            | ✅ Implemented |
+| `update_project`           | Update existing project       | ✅ Implemented |
+| `delete_project`           | Delete project                | ✅ Implemented |
+| `list_servers`             | List servers with filtering   | ✅ Implemented |
+| `create_server`            | Create new server             | ✅ Implemented |
+| `get_server`               | Get detailed server info      | ✅ Implemented |
+| `update_server`            | Update existing server        | ✅ Implemented |
+| `delete_server`            | Delete server                 | ✅ Implemented |
+| `get_available_plans`      | List all available plans      | ✅ Implemented |
+| `get_available_regions`    | Get regions for specific plan | ✅ Implemented |
+| `get_server_creation_flow` | Smart creation workflow       | ✅ Implemented |
+| `validate_server_config`   | Pre-validate server config    | ✅ Implemented |
+| `test_connection`          | Test API connection           | ✅ Implemented |
+
+## 🚀 Smart Server Creation Script
+
+### `run-create-server.js`
+
+**Intelligent server creation with MCP-powered validation:**
+
+- 🔍 **Pre-validation**: Validates configuration before creating expensive resources
+- 📊 **Real-time data**: Always uses current plans, regions, and availability from Latitude.sh API
+- 🎯 **Guided workflow**: Step-by-step process with helpful explanations and recommendations
+- 🛡️ **Error prevention**: Catches configuration issues before they cause failed deployments
+- 🧠 **MCP-powered**: Uses centralized logic for consistent behavior across all interfaces
+- ⚡ **Smart defaults**: Recommends optimal configurations based on current availability
+
+**Usage:**
+
+```bash
+node run-create-server.js
+```
+
+**Features:**
+
+- Interactive project selection (on-demand projects only)
+- Plan selection with real-time specifications and regional availability
+- Comprehensive configuration validation before server creation
+- Optional configurations: SSH keys, tags, user data, startup scripts
+- Multiple billing options: hourly, monthly, yearly
+- Detailed server creation confirmation with all specifications
+
+## 📦 Installation
+
+1. **Clone and install dependencies:**
+
    ```bash
+   git clone <repository-url>
+   cd latitude-sh
    npm install
    ```
-3. Set up environment variables:
+
+2. **Set up environment variables:**
 
    ```bash
    # Copy the example environment file
@@ -43,16 +103,16 @@ A Model Context Protocol (MCP) server that provides access to your latitude.sh p
    # Get your API key from: https://latitude.sh/account/api-keys
    ```
 
-4. Build the project:
+3. **Build the project:**
    ```bash
    npm run build
    ```
 
-## Usage
+## ⚙️ Configuration
 
 ### Environment Variables
 
-The server uses environment variables for configuration. Create a `.env.local` file with the following variables:
+Create a `.env.local` file with the following variables:
 
 ```bash
 # Required: Your Latitude.sh API key
@@ -68,16 +128,6 @@ LATITUDE_TIMEOUT=10000
 NODE_ENV=development
 ```
 
-### Running the Server
-
-```bash
-# Run the built server
-node dist/index.js
-
-# Or run in development mode
-npm run dev
-```
-
 ### Getting Your API Key
 
 1. Go to [Latitude.sh](https://latitude.sh)
@@ -86,284 +136,134 @@ npm run dev
 4. Create a new API key
 5. Copy the key and add it to your `.env.local` file
 
-## Available Tools
+## 🏃 Running the Server
 
-### 1. `list_projects`
+```bash
+# Run the built server
+node dist/index.js
 
-List all projects from your latitude.sh account with optional filtering.
+# Or use npm scripts
+npm run start
+```
 
-**Parameters:**
+## 🛠️ Available Scripts (12 Scripts)
 
-- `limit` (optional): Maximum number of projects to return (default: 50)
-- `page` (optional): Page number for pagination (default: 1)
-- `status` (optional): Filter by project status (`active`, `inactive`, `archived`)
-- `owner` (optional): Filter by owner ID
-- `tags` (optional): Filter by tags array
+| Script                           | Description                       |
+| -------------------------------- | --------------------------------- |
+| `run-create-server.js`           | Smart interactive server creation |
+| `run-list-projects.js`           | List all projects                 |
+| `run-list-projects-on_demand.js` | List only on-demand projects      |
+| `run-list-plans.js`              | List all available server plans   |
+| `run-list-servers.js`            | List all servers                  |
+| `run-get-project.js`             | Get details of a specific project |
+| `run-get-server.js`              | Get details of a specific server  |
+| `run-create-project.js`          | Create a new project              |
+| `run-update-project.js`          | Update an existing project        |
+| `run-delete-project.js`          | Delete a project                  |
+| `run-delete-server.js`           | Delete a server                   |
+| `run-search-projects.js`         | Search projects by query          |
 
-**Example:**
+## 🔧 Tool Schemas
+
+### Project Tools
+
+#### `list_projects`
 
 ```json
 {
-  "limit": 10,
-  "status": "active",
-  "tags": ["javascript", "react"]
+  "page[size]": 20, // Optional: Items per page (1-100)
+  "page[number]": 1, // Optional: Page number
+  "status": "active", // Optional: active, inactive, archived
+  "owner": "user_id", // Optional: Filter by owner
+  "filter[name]": "string", // Optional: Filter by name
+  "filter[slug]": "string", // Optional: Filter by slug
+  "filter[description]": "string", // Optional: Filter by description
+  "filter[billing_type]": "string", // Optional: Filter by billing type
+  "filter[environment]": "string", // Optional: Filter by environment
+  "filter[tags]": "tag1,tag2", // Optional: Filter by tags (comma-separated)
+  "extra_fields[projects]": "stats" // Optional: Include additional fields
 }
 ```
 
-### 2. `get_project`
-
-Get detailed information about a specific project by its ID.
-
-**Parameters:**
-
-- `projectId` (required): The ID of the project to retrieve
-
-**Example:**
+#### `get_project_files`
 
 ```json
 {
-  "projectId": "proj_123456789"
+  "projectId": "proj_123456789" // Required: Project ID
 }
 ```
 
-### 3. `search_projects`
-
-Search for projects using a query string.
-
-**Parameters:**
-
-- `query` (required): Search query to find projects
-- `limit` (optional): Maximum number of projects to return (default: 50)
-- `page` (optional): Page number for pagination (default: 1)
-- `status` (optional): Filter by project status
-
-**Example:**
+#### `create_project`
 
 ```json
 {
-  "query": "machine learning",
-  "limit": 20,
-  "status": "active"
+  "name": "My Project", // Required: Project name
+  "description": "Description", // Optional: Project description
+  "environment": "Development", // Optional: Development, Production, Staging
+  "provisioning_type": "on_demand", // Optional: on_demand, reserved
+  "billing_type": "Normal", // Optional: Normal, Enterprise
+  "billing_method": "Normal", // Optional: Normal, Enterprise
+  "tags": ["tag1", "tag2"] // Optional: Array of tags
 }
 ```
 
-### 4. `get_project_files`
+### Server Tools
 
-Get the file structure of a specific project.
-
-**Parameters:**
-
-- `projectId` (required): The ID of the project to get files for
-
-**Example:**
+#### `list_servers`
 
 ```json
 {
-  "projectId": "proj_123456789"
+  "page[size]": 20, // Optional: Items per page (1-100)
+  "page[number]": 1, // Optional: Page number
+  "status": "on", // Optional: on, off, rebooting, provisioning, deleted
+  "project": "proj_123", // Optional: Filter by project ID
+  "filter[region]": "NYC", // Optional: Filter by region
+  "filter[hostname]": "name", // Optional: Filter by hostname
+  "filter[plan]": "c2-small-x86" // Optional: Filter by plan
 }
 ```
 
-### 5. `create_project`
-
-Create a new project in latitude.sh.
-
-**Parameters:**
-
-- `name` (required): Name of the project to create
-- `description` (optional): Description of the project
-- `environment` (optional): Environment type (`Development`, `Production`, `Staging`)
-- `provisioning_type` (optional): Provisioning type (`on_demand`, `reserved`)
-- `billing_type` (optional): Billing type (`Normal`, `Enterprise`)
-- `billing_method` (optional): Billing method (`Normal`, `Enterprise`)
-- `tags` (optional): Array of tags for the project
-
-**Example:**
+#### `create_server`
 
 ```json
 {
-  "name": "My New Project",
-  "description": "A modern web application",
-  "environment": "Development",
-  "provisioning_type": "on_demand",
-  "billing_type": "Normal",
-  "tags": ["javascript", "react"]
+  "project": "proj_123456789", // Required: Project ID
+  "plan": "c2-small-x86", // Required: Plan slug
+  "operating_system": "ubuntu_24_04_x64_lts", // Required: OS
+  "hostname": "my-server", // Required: Server hostname
+  "site": "NYC", // Required: Region code
+  "billing_type": "hourly", // Optional: hourly, monthly, yearly
+  "sshKeys": ["ssh_key_123"], // Optional: SSH key IDs
+  "tags": ["web", "production"], // Optional: Tags
+  "userData": "#!/bin/bash\necho hello", // Optional: User data script
+  "startupScript": "systemctl start nginx" // Optional: Startup script
 }
 ```
 
-### 6. `update_project`
-
-Update an existing project in latitude.sh.
-
-**Parameters:**
-
-- `projectId` (required): The ID of the project to update
-- `name` (optional): New name for the project
-- `description` (optional): New description for the project
-- `environment` (optional): New environment type (`Development`, `Production`, `Staging`)
-- `provisioning_type` (optional): New provisioning type (`on_demand`, `reserved`)
-- `billing_type` (optional): New billing type (`Normal`, `Enterprise`)
-- `billing_method` (optional): New billing method (`Normal`, `Enterprise`)
-- `tags` (optional): New array of tags for the project
-
-**Example:**
+#### `update_server`
 
 ```json
 {
-  "projectId": "proj_123456789",
-  "name": "Updated Project Name",
-  "description": "Updated project description",
-  "environment": "Production",
-  "tags": ["updated", "production"]
+  "serverId": "sv_123456789", // Required: Server ID
+  "hostname": "new-hostname", // Optional: New hostname
+  "billing": "monthly", // Optional: hourly, monthly, yearly
+  "tags": ["tag1", "tag2"], // Optional: Array of tag IDs
+  "project": "proj_newProject123" // Optional: Move to different project
 }
 ```
 
-### 7. `delete_project`
-
-Delete a project from latitude.sh.
-
-**Parameters:**
-
-- `projectId` (required): The ID of the project to delete
-- `confirm` (optional): Confirmation flag to prevent accidental deletion (default: false)
-
-**Example:**
+#### `validate_server_config`
 
 ```json
 {
-  "projectId": "proj_123456789",
-  "confirm": true
+  "project_id": "proj_123456789", // Required: Project ID
+  "plan": "c2-small-x86", // Required: Plan slug
+  "region": "NYC", // Required: Region code
+  "operating_system": "ubuntu_24_04_x64_lts" // Optional: OS to validate
 }
 ```
 
-**Important:** This action is irreversible. The project and all its associated resources will be permanently deleted.
-
-### 8. `list_servers`
-
-List all servers from your latitude.sh account with optional filtering.
-
-**Parameters:**
-
-- `limit` (optional): Maximum number of servers to return (default: 50)
-- `page` (optional): Page number for pagination (default: 1)
-- `status` (optional): Filter by server status (`running`, `stopped`, `starting`, `stopping`, `error`, `deleted`)
-- `projectId` (optional): Filter by project ID
-- `region` (optional): Filter by region slug
-- `plan` (optional): Filter by plan slug
-- `tags` (optional): Filter by tags array
-
-**Example:**
-
-```json
-{
-  "limit": 10,
-  "status": "running",
-  "projectId": "proj_123456789",
-  "tags": ["web", "production"]
-}
-```
-
-### 9. `create_server`
-
-Create a new server in latitude.sh.
-
-**Parameters:**
-
-- `name` (required): Name of the server to create
-- `projectId` (required): The ID of the project to create the server in
-- `regionId` (required): The ID of the region where the server will be deployed
-- `planId` (required): The ID of the plan/specification for the server
-- `description` (optional): Description of the server
-- `sshKeys` (optional): Array of SSH key IDs to add to the server
-- `tags` (optional): Tags for the server
-- `userData` (optional): User data script to run on server startup
-- `startupScript` (optional): Startup script to run on server initialization
-
-**Example:**
-
-```json
-{
-  "name": "Production Web Server",
-  "projectId": "proj_123456789",
-  "regionId": "lat-south-1",
-  "planId": "lat-cpu-2",
-  "description": "High-performance web server",
-  "tags": ["web", "production"],
-  "userData": "#!/bin/bash\napt-get update\napt-get install -y nginx"
-}
-```
-
-### 10. `get_server`
-
-Get detailed information about a specific server.
-
-**Parameters:**
-
-- `serverId` (required): The ID of the server to retrieve
-
-**Example:**
-
-```json
-{
-  "serverId": "srv_123456789"
-}
-```
-
-### 11. `update_server`
-
-Update an existing server in latitude.sh.
-
-**Parameters:**
-
-- `serverId` (required): The ID of the server to update
-- `name` (optional): New name for the server
-- `description` (optional): New description for the server
-- `tags` (optional): New tags for the server
-- `sshKeys` (optional): New array of SSH key IDs for the server
-
-**Example:**
-
-```json
-{
-  "serverId": "srv_123456789",
-  "name": "Updated Server Name",
-  "description": "Updated server description",
-  "tags": ["updated", "production"]
-}
-```
-
-### 12. `delete_server`
-
-Delete a server from latitude.sh.
-
-**Parameters:**
-
-- `serverId` (required): The ID of the server to delete
-- `confirm` (required): Confirmation flag to prevent accidental deletion (must be true)
-
-**Example:**
-
-```json
-{
-  "serverId": "srv_123456789",
-  "confirm": true
-}
-```
-
-**Important:** This action is irreversible. The server and all its data will be permanently deleted.
-
-### 13. `test_connection`
-
-Test the connection to the latitude.sh API.
-
-**Parameters:** None
-
-**Example:**
-
-```json
-{}
-```
-
-## Response Format
+## 📖 Response Format
 
 All tools return responses in the following format:
 
@@ -372,24 +272,26 @@ All tools return responses in the following format:
   "content": [
     {
       "type": "text",
-      "text": "Formatted response content"
+      "text": "Formatted response content with emojis and structured information"
     }
   ]
 }
 ```
 
-## Error Handling
+## 🚨 Error Handling
 
 The server provides detailed error messages for various scenarios:
 
 - **401 Unauthorized**: Invalid API key
 - **403 Forbidden**: Insufficient permissions
-- **404 Not Found**: Project not found
+- **404 Not Found**: Resource not found
+- **422 Unprocessable Entity**: Validation errors
+- **429 Too Many Requests**: Rate limiting
 - **500+ Server Error**: Latitude.sh API server error
 - **Network Errors**: Connection issues
 - **Validation Errors**: Invalid parameters
 
-## Development
+## 🏗️ Development
 
 ### Prerequisites
 
@@ -406,100 +308,143 @@ npm install
 # Build the project
 npm run build
 
-# Watch for changes
-npm run watch
-
-# Run in development mode
-npm run dev
-
-
+# Build and watch for changes
+npm run build -- --watch
+```
 
 ### Project Structure
 
 ```
-
 latitude-sh/
 ├── src/
-│ ├── types/
-│ │ └── latitude.ts # TypeScript type definitions
-│ ├── utils/
-│ │ └── latitude-api.ts # API client implementation
-│ └── index.ts # Main server file
-├── package.json # Dependencies and scripts
-├── tsconfig.json # TypeScript configuration
-├── README.md # This file
-├── USAGE.md # Usage guide
-├── example-config.json # Example configuration
-├── test-server.js # Test script
-└── LICENSE # MIT License
-
+│   ├── types/
+│   │   └── latitude.ts          # TypeScript type definitions
+│   ├── utils/
+│   │   └── latitude-api.ts      # API client implementation
+│   ├── config.ts                # Configuration management
+│   └── index.ts                 # Main server file
+├── run-*.js                     # Utility scripts
+├── package.json                 # Dependencies and scripts
+├── tsconfig.json               # TypeScript configuration
+├── env.example                 # Environment variables example
+├── README.md                   # This file
+└── USAGE.md                    # Usage guide with examples
 ```
 
-## API Integration
+## 🔗 API Integration
 
-The server integrates with the latitude.sh API using the following endpoints:
+The server integrates with the Latitude.sh API using the following key endpoints:
 
 - `GET /projects` - List projects
+- `POST /projects` - Create project
 - `GET /projects/{id}` - Get project details
+- `PUT /projects/{id}` - Update project
+- `DELETE /projects/{id}` - Delete project
+- `GET /servers` - List servers
+- `POST /servers` - Create server
+- `GET /servers/{id}` - Get server details
+- `PUT /servers/{id}` - Update server
+- `DELETE /servers/{id}` - Delete server
+- `GET /plans` - List available plans
 - `GET /user/profile` - Test connection
 
 ### Authentication
 
-The server uses Bearer token authentication with your latitude.sh API key.
+The server uses Bearer token authentication with your Latitude.sh API key.
 
 ### Rate Limiting
 
-The server respects latitude.sh API rate limits and includes appropriate error handling for rate limit responses.
+The server respects Latitude.sh API rate limits and includes appropriate error handling for rate limit responses.
 
-## Security Considerations
+## 🔒 Security Considerations
 
-- API keys are passed as command-line arguments (consider using environment variables in production)
-- All API requests are made over HTTPS
-- Input validation is performed using Zod schemas
-- Error messages are sanitized to prevent information leakage
+- ✅ API keys are loaded from environment variables
+- ✅ All API requests are made over HTTPS
+- ✅ Input validation is performed using Zod schemas
+- ✅ Error messages are sanitized to prevent information leakage
+- ✅ API keys are masked in error logs
 
-## Contributing
+## 🎯 Integration Examples
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+### With Claude Desktop
 
-## License
+Add to your `claude_desktop_config.json`:
 
-MIT License - see LICENSE file for details.
+```json
+{
+  "mcpServers": {
+    "latitude-sh": {
+      "command": "node",
+      "args": ["/path/to/latitude-sh/dist/index.js"],
+      "env": {
+        "LATITUDE_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
 
-## Support
+### With Other MCP Clients
+
+```json
+{
+  "mcpServers": {
+    "latitude-sh": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "env": {
+        "LATITUDE_API_KEY": "your-api-key-here",
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
+```
+
+## 🆘 Support
 
 For issues and questions:
 
-1. Check the error messages for troubleshooting hints
-2. Verify your API key is correct
-3. Test the connection using the `test_connection` tool
-4. Check the latitude.sh API documentation for endpoint changes
+1. **Check Error Messages**: The server provides detailed error information
+2. **Verify API Key**: Ensure your API key is correct and has proper permissions
+3. **Test Connection**: Use the `test_connection` tool to verify connectivity
+4. **Check Documentation**: Review the Latitude.sh API documentation
+5. **Validate Configuration**: Use `validate_server_config` before creating servers
 
-## Changelog
+## 📝 Changelog
+
+### v0.4.0 (Current)
+
+- **Updated `update_server` Tool**: Now supports official API parameters (hostname, billing, tags, project)
+- **Complete Tool Documentation**: All 17 tools fully documented with examples
+- **Enhanced Documentation**: Updated README.md and USAGE.md with accurate schemas
+- **Script Consolidation**: Streamlined to 12 essential scripts
+- **Improved Examples**: Real-world usage examples for all tools
+
+### v0.3.0
+
+- **Smart Server Creation**: Added intelligent server creation workflow
+- **Pre-validation**: Added `validate_server_config` tool
+- **Enhanced Plans**: Added `get_available_plans` with detailed specifications
+- **Region Availability**: Added `get_available_regions` tool
+- **Improved Error Handling**: Better error messages and validation
+- **Updated Scripts**: Streamlined script collection with smart creation
 
 ### v0.2.0
 
-- **Server Management CRUD Operations**
-  - List servers with filtering and pagination
-  - Create servers with custom specifications
-  - Get detailed server information
-  - Update server properties and configuration
-  - Delete servers with confirmation protection
-- Enhanced error handling for server operations
-- Improved response formatting with emojis and status indicators
+- **Server Management**: Complete CRUD operations for servers
+- **Enhanced Filtering**: Advanced filtering for projects and servers
+- **Pagination Support**: Proper pagination for large result sets
+- **Improved Formatting**: Better response formatting with emojis
 
 ### v0.1.0
 
-- Initial release
-- Basic project listing and details
-- Search functionality
-- File structure access
-- Project creation with custom settings
-- Project update functionality
-- Project deletion with confirmation
-- Connection testing
-```
+- **Initial Release**: Basic project management functionality
+- **Project CRUD**: Create, read, update, delete projects
+- **Search Functionality**: Project search capabilities
+- **File Structure**: Access to project files
+- **Connection Testing**: API connectivity verification
+
+## 📄 License
+
+MIT License - see LICENSE file for details.

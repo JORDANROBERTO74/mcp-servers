@@ -21,19 +21,22 @@ import { getAPIConfig } from "./config.js";
 
 // Schema definitions for tool arguments
 const ListProjectsArgsSchema = z.object({
-  limit: z
+  // Pagination
+  "page[size]": z
     .number()
     .min(1)
     .max(100)
     .optional()
-    .default(50)
-    .describe("Maximum number of projects to return (1-100)"),
-  page: z
+    .default(20)
+    .describe("Number of items to return per page (1-100, default: 20)"),
+  "page[number]": z
     .number()
     .min(1)
     .optional()
     .default(1)
-    .describe("Page number for pagination"),
+    .describe("Page number to return (starts at 1)"),
+
+  // Basic filters
   status: z
     .enum(["active", "inactive", "archived"])
     .optional()
@@ -47,10 +50,75 @@ const ListProjectsArgsSchema = z.object({
     )
     .optional()
     .describe("Filter by owner ID"),
+
+  // Advanced filters
+  "filter[name]": z
+    .string()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe("Filter by project name"),
+  "filter[slug]": z
+    .string()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe("Filter by project slug"),
+  "filter[description]": z
+    .string()
+    .min(1)
+    .max(500)
+    .optional()
+    .describe("Filter by project description"),
+  "filter[billing_type]": z
+    .string()
+    .min(1)
+    .max(50)
+    .optional()
+    .describe("Filter by billing type"),
+  "filter[environment]": z
+    .string()
+    .min(1)
+    .max(50)
+    .optional()
+    .describe("Filter by environment"),
+  "filter[tags]": z
+    .string()
+    .min(1)
+    .max(200)
+    .optional()
+    .describe("Filter by tags (comma-separated, e.g. 'tag_1,tag_2')"),
+
+  // Extra fields
+  "extra_fields[projects]": z
+    .string()
+    .optional()
+    .describe(
+      "Extra fields to include (e.g. 'last_renewal_date,next_renewal_date')"
+    ),
+
+  // Legacy support (for backward compatibility)
+  limit: z
+    .number()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe("Legacy: Maximum number of projects to return (1-100)"),
+  page: z
+    .number()
+    .min(1)
+    .optional()
+    .describe("Legacy: Page number for pagination"),
   tags: z
     .array(z.string().min(1).max(50))
     .optional()
-    .describe("Filter by tags"),
+    .describe("Legacy: Filter by tags array"),
+  query: z
+    .string()
+    .min(1)
+    .max(200)
+    .optional()
+    .describe("Legacy: Search query to find projects"),
 });
 
 const GetProjectArgsSchema = z.object({
@@ -97,6 +165,21 @@ const GetProjectFilesArgsSchema = z.object({
 });
 
 const TestConnectionArgsSchema = z.object({});
+
+const GetAvailablePlansArgsSchema = z.object({});
+
+const GetServerCreationFlowArgsSchema = z.object({});
+
+const ValidateServerConfigArgsSchema = z.object({
+  project_id: z.string().describe("Project ID to validate"),
+  plan: z.string().describe("Plan slug to validate"),
+  region: z.string().describe("Region code to validate"),
+  operating_system: z.string().optional().describe("OS to validate"),
+});
+
+const GetAvailableRegionsArgsSchema = z.object({
+  plan: z.string().min(1).describe("Plan slug to check availability for"),
+});
 
 const CreateProjectArgsSchema = z.object({
   name: z
@@ -186,21 +269,24 @@ const DeleteProjectArgsSchema = z.object({
 });
 
 const ListServersArgsSchema = z.object({
-  limit: z
+  // Pagination
+  "page[size]": z
     .number()
     .min(1)
     .max(100)
     .optional()
-    .default(50)
-    .describe("Maximum number of servers to return (1-100)"),
-  page: z
+    .default(20)
+    .describe("Number of items to return per page (1-100, default: 20)"),
+  "page[number]": z
     .number()
     .min(1)
     .optional()
     .default(1)
-    .describe("Page number for pagination"),
+    .describe("Page number to return (starts at 1)"),
+
+  // Basic filters
   status: z
-    .enum(["running", "stopped", "starting", "stopping", "error", "deleted"])
+    .enum(["on", "off", "rebooting", "provisioning", "deleted"])
     .optional()
     .describe("Filter by server status"),
   projectId: z
@@ -212,6 +298,102 @@ const ListServersArgsSchema = z.object({
     )
     .optional()
     .describe("Filter by project ID"),
+
+  // Advanced filters
+  "filter[project]": z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Filter by project ID or Slug"),
+  "filter[region]": z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Filter by region Slug"),
+  "filter[hostname]": z
+    .string()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe("Filter by server hostname"),
+  "filter[created_at_gte]": z
+    .string()
+    .optional()
+    .describe("Filter by created at greater than equal date (ISO format)"),
+  "filter[created_at_lte]": z
+    .string()
+    .optional()
+    .describe("Filter by created at less than equal date (ISO format)"),
+  "filter[label]": z
+    .string()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe("Filter by server label"),
+  "filter[status]": z
+    .string()
+    .min(1)
+    .max(50)
+    .optional()
+    .describe("Filter by server status"),
+  "filter[plan]": z
+    .string()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe("Filter by platform/plan name"),
+  "filter[gpu]": z.boolean().optional().describe("Filter by GPU existence"),
+  "filter[ram][eql]": z
+    .number()
+    .min(1)
+    .optional()
+    .describe("Filter servers with RAM size equals (in GB)"),
+  "filter[ram][gte]": z
+    .number()
+    .min(1)
+    .optional()
+    .describe("Filter servers with RAM size greater than or equal (in GB)"),
+  "filter[ram][lte]": z
+    .number()
+    .min(1)
+    .optional()
+    .describe("Filter servers with RAM size less than or equal (in GB)"),
+  "filter[disk][eql]": z
+    .number()
+    .min(1)
+    .optional()
+    .describe("Filter servers with disk size equals (in GB)"),
+  "filter[disk][gte]": z
+    .number()
+    .min(1)
+    .optional()
+    .describe("Filter servers with disk size greater than or equal (in GB)"),
+  "filter[disk][lte]": z
+    .number()
+    .min(1)
+    .optional()
+    .describe("Filter servers with disk size less than or equal (in GB)"),
+  "filter[tags]": z
+    .string()
+    .min(1)
+    .max(200)
+    .optional()
+    .describe("Filter by tags (comma-separated, e.g. 'tag_1,tag_2')"),
+
+  // Extra fields
+  "extra_fields[servers]": z
+    .string()
+    .optional()
+    .describe("Extra fields to include (e.g. 'credentials')"),
+
+  // Legacy support (for backward compatibility)
+  limit: z
+    .number()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe("Maximum number of servers to return (1-100)"),
+  page: z.number().min(1).optional().describe("Page number for pagination"),
   region: z.string().min(1).optional().describe("Filter by region slug"),
   plan: z.string().min(1).optional().describe("Filter by plan slug"),
   tags: z
@@ -221,12 +403,7 @@ const ListServersArgsSchema = z.object({
 });
 
 const CreateServerArgsSchema = z.object({
-  name: z
-    .string()
-    .min(1)
-    .max(100)
-    .describe("Name of the server to create (REQUIRED)"),
-  projectId: z
+  project: z
     .string()
     .min(1)
     .regex(
@@ -234,21 +411,23 @@ const CreateServerArgsSchema = z.object({
       "Project ID must be in format 'proj_123456789'"
     )
     .describe("The ID of the project to create the server in (REQUIRED)"),
-  regionId: z
-    .string()
-    .min(1)
-    .describe(
-      "The ID of the region where the server will be deployed (REQUIRED)"
-    ),
-  planId: z
+  plan: z
     .string()
     .min(1)
     .describe("The ID of the plan/specification for the server (REQUIRED)"),
-  description: z
+  operating_system: z
     .string()
-    .max(500)
-    .optional()
-    .describe("Description of the server (OPTIONAL)"),
+    .min(1)
+    .describe("Operating system for the server (REQUIRED)"),
+  hostname: z
+    .string()
+    .min(1)
+    .max(100)
+    .describe("Hostname for the server (REQUIRED)"),
+  site: z
+    .string()
+    .min(1)
+    .describe("The region/site where the server will be deployed (REQUIRED)"),
   sshKeys: z
     .array(z.string().min(1))
     .optional()
@@ -289,41 +468,43 @@ const UpdateServerArgsSchema = z.object({
       "Server ID must contain only letters, numbers, hyphens, and underscores"
     )
     .describe("The ID of the server to update (REQUIRED)"),
-  name: z
+  hostname: z
     .string()
     .min(1)
     .max(100)
     .optional()
-    .describe("New name for the server (OPTIONAL)"),
-  description: z
-    .string()
-    .max(500)
+    .describe("New hostname for the server (OPTIONAL)"),
+  billing: z
+    .enum(["hourly", "monthly", "yearly"])
     .optional()
-    .describe("New description for the server (OPTIONAL)"),
+    .describe(
+      "Server billing type: hourly/monthly for on-demand projects, yearly for reserved projects (OPTIONAL)"
+    ),
   tags: z
-    .array(z.string().min(1).max(50))
-    .optional()
-    .describe("New tags for the server (OPTIONAL)"),
-  sshKeys: z
     .array(z.string().min(1))
     .optional()
-    .describe("New array of SSH key IDs for the server (OPTIONAL)"),
+    .describe("Array of tag IDs to assign to the server (OPTIONAL)"),
+  project: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Project ID or slug to move the server to (OPTIONAL)"),
 });
 
 const DeleteServerArgsSchema = z.object({
-  serverId: z
+  server_id: z
     .string()
     .min(1)
     .regex(
       /^[a-zA-Z0-9_-]+$/,
       "Server ID must contain only letters, numbers, hyphens, and underscores"
     )
-    .describe("The ID of the server to delete (REQUIRED)"),
-  confirm: z
-    .boolean()
-    .describe(
-      "Confirmation flag to prevent accidental deletion. Must be true to proceed (REQUIRED)"
-    ),
+    .describe("The server ID (REQUIRED)"),
+  reason: z
+    .string()
+    .max(500)
+    .optional()
+    .describe("The reason for deleting the server (OPTIONAL)"),
 });
 
 // Define ToolInput type locally
@@ -347,29 +528,32 @@ const server = new Server(
 function formatProject(
   project: LatitudeProject | LatitudeProjectDetails
 ): string {
-  return `📁 **${project.name}** (ID: ${project.id})
-📝 Description: ${project.description || "No description"}
-👤 Owner: ${project.owner.name} (${project.owner.email})
+  const attrs = project.attributes;
+  const team = attrs.team;
+
+  return `📁 **${attrs.name}** (ID: ${project.id})
+📝 Description: ${attrs.description || "No description"}
+👤 Team: ${team.name} (${team.slug})
 📅 Created: ${
-    isValidDate(project.createdAt)
-      ? new Date(project.createdAt).toLocaleString()
+    isValidDate(attrs.created_at)
+      ? new Date(attrs.created_at).toLocaleString()
       : "Unknown"
   }
 📅 Updated: ${
-    isValidDate(project.updatedAt)
-      ? new Date(project.updatedAt).toLocaleString()
+    isValidDate(attrs.updated_at)
+      ? new Date(attrs.updated_at).toLocaleString()
       : "Unknown"
   }
-🏷️ Status: ${project.status}
-${
-  project.collaborators && project.collaborators.length > 0
-    ? `👥 Collaborators: ${project.collaborators.length}`
-    : ""
-}
-${project.settings ? `🔒 Visibility: ${project.settings.visibility}` : ""}
+🌍 Environment: ${attrs.environment}
+💳 Billing: ${attrs.billing_type} (${attrs.billing_method})
+⚙️ Provisioning: ${attrs.provisioning_type}
+🏷️ Tags: ${attrs.tags.length > 0 ? attrs.tags.join(", ") : "No tags"}
+📊 Stats: ${attrs.stats.servers} servers, ${attrs.stats.databases} databases, ${
+    attrs.stats.storages
+  } storages
 ${
   "metadata" in project && project.metadata?.tags
-    ? `🏷️ Tags: ${project.metadata.tags.join(", ")}`
+    ? `🏷️ Additional Tags: ${project.metadata.tags.join(", ")}`
     : ""
 }
 ${
@@ -434,57 +618,65 @@ function formatSize(bytes: number): string {
 
 // Helper function to format server information
 function formatServer(server: LatitudeServer | LatitudeServerDetails): string {
+  const attrs = server.attributes;
   const statusEmoji = {
-    running: "🟢",
-    stopped: "🔴",
-    starting: "🟡",
-    stopping: "🟡",
-    error: "❌",
+    on: "🟢",
+    off: "🔴",
+    rebooting: "🟡",
+    provisioning: "🟡",
     deleted: "🗑️",
   };
 
-  return `🖥️ **${server.name}** (ID: ${server.id})
-📝 Description: ${server.description || "No description"}
-🏷️ Status: ${statusEmoji[server.status]} ${server.status}
-🌍 Region: ${server.region.name} (${server.region.slug})
-💻 Plan: ${server.plan.name} - $${server.plan.price} ${server.plan.currency}
+  return `🖥️ **${attrs.hostname}** (ID: ${server.id})
+📋 Label: ${attrs.label || "N/A"}
+🏷️ Status: ${statusEmoji[attrs.status] || "⚪"} ${attrs.status}
+💰 Price: $${attrs.price || "N/A"}/hour
+🎭 Role: ${attrs.role || "N/A"}
+🌍 Region: ${attrs.region?.city || "N/A"}, ${attrs.region?.country || "N/A"}
+🏢 Site: ${attrs.region?.site?.name || "N/A"} (${
+    attrs.region?.site?.slug || "N/A"
+  })
+💻 Plan: ${attrs.plan?.name || "N/A"} (${attrs.plan?.billing || "N/A"})
 📅 Created: ${
-    isValidDate(server.createdAt)
-      ? new Date(server.createdAt).toLocaleString()
+    attrs.created_at && isValidDate(attrs.created_at)
+      ? new Date(attrs.created_at).toLocaleString()
       : "Unknown"
   }
-📅 Updated: ${
-    isValidDate(server.updatedAt)
-      ? new Date(server.updatedAt).toLocaleString()
-      : "Unknown"
+🌐 IPv4: ${attrs.primary_ipv4 || "N/A"}
+${attrs.primary_ipv6 ? `🌐 IPv6: ${attrs.primary_ipv6}` : ""}
+🔒 Locked: ${attrs.locked ? "Yes" : "No"}
+🆘 Rescue Allowed: ${attrs.rescue_allowed ? "Yes" : "No"}
+📊 IPMI Status: ${attrs.ipmi_status || "N/A"}
+${
+  attrs.scheduled_deletion_at
+    ? `🗑️ Scheduled Deletion: ${new Date(
+        attrs.scheduled_deletion_at
+      ).toLocaleString()}`
+    : ""
+}
+👥 Team: ${attrs.team?.name || "N/A"} (${attrs.team?.slug || "N/A"})
+📁 Project: ${attrs.project?.name || "N/A"} (${attrs.project?.slug || "N/A"})
+💿 OS: ${attrs.operating_system?.name || "N/A"} ${
+    attrs.operating_system?.version || ""
   }
-🌐 IP Address: ${server.ipAddress || "Not assigned"}
-🔒 Private IP: ${server.privateIpAddress || "Not assigned"}
+📦 Distro: ${attrs.operating_system?.distro?.name || "N/A"} (${
+    attrs.operating_system?.distro?.series || "N/A"
+  })
+⚙️ Specs: ${attrs.specs?.cpu || "N/A"}, ${attrs.specs?.ram || "N/A"}, ${
+    attrs.specs?.disk || "N/A"
+  }, ${attrs.specs?.nic || "N/A"}
+${attrs.specs?.gpu ? `🎮 GPU: ${attrs.specs.gpu}` : ""}
+🔌 Interfaces: ${
+    attrs.interfaces
+      ? attrs.interfaces.map((i) => `${i.name} (${i.role})`).join(", ")
+      : "N/A"
+  }
+🏷️ Tags: ${
+    attrs.tags && attrs.tags.length > 0 ? attrs.tags.join(", ") : "No tags"
+  }
 ${
-  server.metadata
-    ? `💾 Specs: ${server.metadata.cpu} CPU, ${server.metadata.memory}MB RAM, ${server.metadata.disk}GB Disk`
-    : ""
-}
-${
-  server.tags && server.tags.length > 0
-    ? `🏷️ Tags: ${server.tags.join(", ")}`
-    : ""
-}
-${
-  "specs" in server && server.specs
-    ? `⚙️ Detailed Specs: ${server.specs.cpu} CPU, ${server.specs.memory}MB RAM, ${server.specs.disk}GB Disk, ${server.specs.bandwidth}GB Bandwidth`
-    : ""
-}
-${
-  "network" in server && server.network
-    ? `🌐 Network: Public IP: ${server.network.publicIp}, Private IP: ${
-        server.network.privateIp || "N/A"
-      }`
-    : ""
-}
-${
-  "os" in server && server.os
-    ? `💿 OS: ${server.os.name} ${server.os.version} (${server.os.architecture})`
+  "metadata" in server && server.metadata?.tags
+    ? `🏷️ Additional Tags: ${server.metadata.tags.join(", ")}`
     : ""
 }
 ---`;
@@ -616,11 +808,51 @@ try {
           inputSchema: zodToJsonSchema(DeleteServerArgsSchema) as ToolInput,
         },
         {
+          name: "get_available_plans",
+          description:
+            "Get all available server plans from latitude.sh. " +
+            "Returns a list of all plans with their specifications, pricing, and availability. " +
+            "Useful for determining which plans are available before creating a server.",
+          inputSchema: zodToJsonSchema(
+            GetAvailablePlansArgsSchema
+          ) as ToolInput,
+        },
+        {
+          name: "get_available_regions",
+          description:
+            "Get available regions for a specific server plan. " +
+            "Returns a list of regions where the specified plan is available. " +
+            "Useful for determining which regions have stock for a particular plan.",
+          inputSchema: zodToJsonSchema(
+            GetAvailableRegionsArgsSchema
+          ) as ToolInput,
+        },
+        {
           name: "test_connection",
           description:
             "Test the connection to the latitude.sh API. " +
             "Verifies that the API key is valid and the server can communicate with latitude.sh.",
           inputSchema: zodToJsonSchema(TestConnectionArgsSchema) as ToolInput,
+        },
+        {
+          name: "get_server_creation_flow",
+          description:
+            "Get the complete server creation flow with validation steps. " +
+            "Returns available projects (on-demand only), plans with regions, and required steps. " +
+            "Use this before attempting to create a server to understand what's available.",
+          inputSchema: zodToJsonSchema(
+            GetServerCreationFlowArgsSchema
+          ) as ToolInput,
+        },
+        {
+          name: "validate_server_config",
+          description:
+            "Validate a server configuration before creation. " +
+            "Checks if project is on-demand, plan exists, region is available, etc. " +
+            "Returns validation results and suggestions.",
+          inputSchema: zodToJsonSchema(
+            ValidateServerConfigArgsSchema
+          ) as ToolInput,
         },
       ],
     };
@@ -901,24 +1133,150 @@ try {
             );
           }
 
-          if (!parsed.data.confirm) {
-            return {
-              content: [
-                {
-                  type: "text",
-                  text: "❌ Server deletion cancelled. Set 'confirm' to true to proceed with deletion.",
-                },
-              ],
-            };
-          }
+          // Delete the server
+          await latitudeClient.deleteServer(parsed.data.server_id);
 
-          await latitudeClient.deleteServer(parsed.data.serverId);
+          // Prepare response message
+          let responseMessage = `✅ Server ${parsed.data.server_id} deleted successfully!`;
+
+          if (parsed.data.reason) {
+            responseMessage += `\n📝 Reason: ${parsed.data.reason}`;
+          }
 
           return {
             content: [
               {
                 type: "text",
-                text: `✅ Server ${parsed.data.serverId} deleted successfully!`,
+                text: responseMessage,
+              },
+            ],
+          };
+        }
+
+        case "get_available_plans": {
+          const parsed = GetAvailablePlansArgsSchema.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for get_available_plans: ${parsed.error}`
+            );
+          }
+
+          const plans = await latitudeClient.getAvailablePlans();
+
+          let plansText = "📋 Available Plans:\n";
+          plans.forEach((plan, index) => {
+            plansText += `\n${index + 1}. **${plan.attributes.name}**\n`;
+            plansText += `   ID: ${plan.id}\n`;
+            plansText += `   Slug: ${plan.attributes.slug}\n`;
+            plansText += `   Features: ${plan.attributes.features.join(
+              ", "
+            )}\n`;
+
+            // Add specs information
+            if (plan.attributes.specs) {
+              const specs = plan.attributes.specs;
+              plansText += `   CPU: ${specs.cpu.cores} cores ${specs.cpu.type} @ ${specs.cpu.clock}GHz\n`;
+              plansText += `   Memory: ${specs.memory.total}GB\n`;
+              if (specs.drives.length > 0) {
+                plansText += `   Storage: ${specs.drives
+                  .map((d) => `${d.count}x ${d.size} ${d.type}`)
+                  .join(", ")}\n`;
+              }
+              if (specs.nics.length > 0) {
+                plansText += `   Network: ${specs.nics
+                  .map((n) => `${n.count}x ${n.type}`)
+                  .join(", ")}\n`;
+              }
+            }
+
+            // Add pricing from first available region
+            if (plan.attributes.regions.length > 0) {
+              const firstRegion = plan.attributes.regions[0];
+              plansText += `   Pricing (USD): $${firstRegion.pricing.USD.hour}/hr, $${firstRegion.pricing.USD.month}/mo\n`;
+            }
+
+            // Add detailed region information
+            if (plan.attributes.regions.length > 0) {
+              plansText += `   Regions:\n`;
+              plan.attributes.regions.forEach((region) => {
+                const stockIcon =
+                  region.stock_level === "high"
+                    ? "🟢"
+                    : region.stock_level === "medium"
+                    ? "🟡"
+                    : region.stock_level === "low"
+                    ? "🟠"
+                    : "🔴";
+
+                plansText += `     ${stockIcon} ${region.name} (${region.stock_level})\n`;
+
+                if (region.locations.in_stock.length > 0) {
+                  plansText += `       📍 In stock: ${region.locations.in_stock.join(
+                    ", "
+                  )}\n`;
+                }
+
+                if (
+                  region.locations.available.length >
+                  region.locations.in_stock.length
+                ) {
+                  const availableOnly = region.locations.available.filter(
+                    (loc) => !region.locations.in_stock.includes(loc)
+                  );
+                  if (availableOnly.length > 0) {
+                    plansText += `       ⏳ Available: ${availableOnly.join(
+                      ", "
+                    )}\n`;
+                  }
+                }
+
+                if (region.deploys_instantly.length > 0) {
+                  plansText += `       ⚡ Instant deploy: ${region.deploys_instantly.join(
+                    ", "
+                  )}\n`;
+                }
+              });
+            }
+
+            plansText += "---\n";
+          });
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: plansText,
+              },
+            ],
+          };
+        }
+
+        case "get_available_regions": {
+          const parsed = GetAvailableRegionsArgsSchema.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for get_available_regions: ${parsed.error}`
+            );
+          }
+
+          const regions = await latitudeClient.getAvailableRegions(
+            parsed.data.plan
+          );
+
+          let regionsText = `🌍 Available Regions for plan ${parsed.data.plan}:\n`;
+          regions.forEach((region, index) => {
+            regionsText += `\n${index + 1}. **${region.name}**\n`;
+            regionsText += `   ID: ${region.id}\n`;
+            regionsText += `   Slug: ${region.slug}\n`;
+            regionsText += `   Location: ${region.city}, ${region.country}\n`;
+            regionsText += "---\n";
+          });
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: regionsText,
               },
             ],
           };
@@ -939,6 +1297,300 @@ try {
               {
                 type: "text",
                 text: "✅ Successfully connected to latitude.sh API",
+              },
+            ],
+          };
+        }
+
+        case "get_server_creation_flow": {
+          const parsed = GetServerCreationFlowArgsSchema.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for get_server_creation_flow: ${parsed.error}`
+            );
+          }
+
+          // Get available projects (on-demand only)
+          const allProjects = await latitudeClient.getProjects({});
+          const onDemandProjects = allProjects.projects.filter(
+            (project: any) =>
+              project.attributes.provisioning_type === "on_demand"
+          );
+
+          // Get available plans
+          const plans = await latitudeClient.getAvailablePlans();
+
+          // Get common regions mapping
+          const regionMappings: { [key: string]: string[] } = {
+            "c2-small-x86": [
+              "MIA2",
+              "SAO",
+              "SAO2",
+              "SYD",
+              "SAN3",
+              "TYO3",
+              "MEX2",
+              "BGT",
+            ],
+            "c2-medium-x86": [
+              "MIA2",
+              "NYC",
+              "LAX",
+              "DAL",
+              "CHI",
+              "LAX2",
+              "SAO",
+              "SAO2",
+              "SYD",
+              "SAN3",
+              "TYO3",
+              "MEX2",
+              "BGT",
+            ],
+            "c3-small-x86": [
+              "MIA2",
+              "NYC",
+              "LAX",
+              "DAL",
+              "CHI",
+              "LAX2",
+              "SAO",
+              "SAO2",
+              "SYD",
+              "SAN3",
+              "TYO3",
+              "MEX2",
+              "BGT",
+            ],
+          };
+
+          let flowText = "🚀 **SERVER CREATION FLOW**\n\n";
+
+          flowText += "📋 **STEP 1: Select Project (on-demand only)**\n";
+          if (onDemandProjects.length === 0) {
+            flowText +=
+              "❌ No on-demand projects available. You need to create a project with provisioning_type='on_demand' first.\n\n";
+          } else {
+            flowText += `✅ Found ${onDemandProjects.length} on-demand project(s):\n`;
+            onDemandProjects
+              .slice(0, 5)
+              .forEach((project: any, index: number) => {
+                flowText += `   ${index + 1}. ${project.attributes.name} (${
+                  project.id
+                })\n`;
+              });
+            if (onDemandProjects.length > 5) {
+              flowText += `   ... and ${onDemandProjects.length - 5} more\n`;
+            }
+            flowText += "\n";
+          }
+
+          flowText += "💻 **STEP 2: Choose Plan**\n";
+          flowText += `✅ Found ${plans.length} available plans\n`;
+          flowText += "Popular options:\n";
+          const popularPlans = plans.filter((p) =>
+            [
+              "c2-small-x86",
+              "c2-medium-x86",
+              "c3-small-x86",
+              "m3-large-x86",
+            ].includes(p.attributes.slug)
+          );
+          popularPlans.forEach((plan, index) => {
+            const regions = regionMappings[plan.attributes.slug] || [
+              "Multiple regions",
+            ];
+            flowText += `   ${index + 1}. ${plan.attributes.slug} - ${
+              plan.attributes.name
+            }\n`;
+            flowText += `      CPU: ${plan.attributes.specs.cpu.cores} cores ${plan.attributes.specs.cpu.type}\n`;
+            flowText += `      Memory: ${plan.attributes.specs.memory.total}GB\n`;
+            flowText += `      Regions: ${regions.slice(0, 4).join(", ")}${
+              regions.length > 4 ? "..." : ""
+            }\n`;
+          });
+          flowText += "\n";
+
+          flowText += "🌍 **STEP 3: Select Region**\n";
+          flowText +=
+            "Region availability depends on the selected plan. Common regions:\n";
+          flowText += "   • US: NYC, LAX, DAL, CHI, MIA2\n";
+          flowText += "   • LATAM: SAO, SAO2, MEX2, BGT, SAN3\n";
+          flowText += "   • APAC: TYO3, SYD, SGP\n";
+          flowText += "   • EU: LON, FRA, AMS\n\n";
+
+          flowText += "🖥️ **STEP 4: Choose Operating System**\n";
+          flowText += "Recommended: ubuntu_24_04_x64_lts (most compatible)\n";
+          flowText += "Other options: centos_8_x64, debian_12_x64, etc.\n\n";
+
+          flowText += "🏷️ **STEP 5: Set Hostname**\n";
+          flowText += "Unique name to identify your server\n\n";
+
+          flowText += "⚙️ **OPTIONAL CONFIGURATION**\n";
+          flowText += "   • SSH Keys: For secure access\n";
+          flowText += "   • Tags: For organization\n";
+          flowText += "   • User Data: Initialization script\n";
+          flowText += "   • Startup Script: Post-boot configuration\n";
+          flowText += "   • Billing Type: hourly, monthly, yearly\n\n";
+
+          flowText += "✅ **VALIDATION CHECKLIST**\n";
+          flowText += "Before creating a server, ensure:\n";
+          flowText += "   1. Project has provisioning_type='on_demand'\n";
+          flowText += "   2. Plan is available in your desired region\n";
+          flowText += "   3. Operating system is supported\n";
+          flowText += "   4. Hostname is unique\n\n";
+
+          flowText += "💡 **TIPS**\n";
+          flowText +=
+            "   • Use 'validate_server_config' tool before creation\n";
+          flowText += "   • Start with c2-small-x86 for testing\n";
+          flowText += "   • Choose region closest to your users\n";
+          flowText += "   • Use hourly billing for temporary servers\n";
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: flowText,
+              },
+            ],
+          };
+        }
+
+        case "validate_server_config": {
+          const parsed = ValidateServerConfigArgsSchema.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for validate_server_config: ${parsed.error}`
+            );
+          }
+
+          let validationText = "🔍 **SERVER CONFIGURATION VALIDATION**\n\n";
+          let isValid = true;
+          const issues = [];
+          const warnings = [];
+
+          try {
+            // Validate project
+            validationText += "📁 **PROJECT VALIDATION**\n";
+            const projects = await latitudeClient.getProjects({});
+            const project = projects.projects.find(
+              (p: any) => p.id === parsed.data.project_id
+            );
+
+            if (!project) {
+              issues.push("Project not found");
+              validationText += `❌ Project ${parsed.data.project_id} not found\n`;
+              isValid = false;
+            } else if (project.attributes.provisioning_type !== "on_demand") {
+              issues.push("Project is not on-demand");
+              validationText += `❌ Project is '${project.attributes.provisioning_type}', must be 'on_demand'\n`;
+              isValid = false;
+            } else {
+              validationText += `✅ Project ${project.attributes.name} is valid (on-demand)\n`;
+            }
+
+            // Validate plan
+            validationText += "\n💻 **PLAN VALIDATION**\n";
+            const plans = await latitudeClient.getAvailablePlans();
+            const plan = plans.find(
+              (p) => p.attributes.slug === parsed.data.plan
+            );
+
+            if (!plan) {
+              issues.push("Plan not found");
+              validationText += `❌ Plan '${parsed.data.plan}' not found\n`;
+              isValid = false;
+            } else {
+              validationText += `✅ Plan ${plan.attributes.name} is available\n`;
+              validationText += `   CPU: ${plan.attributes.specs.cpu.cores} cores ${plan.attributes.specs.cpu.type}\n`;
+              validationText += `   Memory: ${plan.attributes.specs.memory.total}GB\n`;
+            }
+
+            // Validate region
+            validationText += "\n🌍 **REGION VALIDATION**\n";
+            if (plan) {
+              const planRegions = plan.attributes.regions;
+              const regionAvailable = planRegions.some(
+                (region) =>
+                  region.locations.available.includes(parsed.data.region) ||
+                  region.locations.in_stock.includes(parsed.data.region)
+              );
+
+              if (!regionAvailable) {
+                issues.push("Region not available for this plan");
+                validationText += `❌ Region '${parsed.data.region}' not available for plan '${parsed.data.plan}'\n`;
+                isValid = false;
+              } else {
+                const inStock = planRegions.some((region) =>
+                  region.locations.in_stock.includes(parsed.data.region)
+                );
+                if (inStock) {
+                  validationText += `✅ Region '${parsed.data.region}' is in stock\n`;
+                } else {
+                  validationText += `⚠️ Region '${parsed.data.region}' is available but may have limited stock\n`;
+                  warnings.push("Region may have limited stock");
+                }
+              }
+            }
+
+            // Validate OS
+            if (parsed.data.operating_system) {
+              validationText += "\n🖥️ **OPERATING SYSTEM VALIDATION**\n";
+              const commonOS = [
+                "ubuntu_24_04_x64_lts",
+                "ubuntu_22_04_x64_lts",
+                "centos_8_x64",
+                "debian_12_x64",
+                "rocky_9_x64",
+              ];
+              if (commonOS.includes(parsed.data.operating_system)) {
+                validationText += `✅ Operating system '${parsed.data.operating_system}' is supported\n`;
+              } else {
+                validationText += `⚠️ Operating system '${parsed.data.operating_system}' may not be supported\n`;
+                warnings.push("Uncommon operating system");
+              }
+            }
+          } catch (error) {
+            issues.push("API error during validation");
+            validationText += `❌ Error during validation: ${
+              error instanceof Error ? error.message : String(error)
+            }\n`;
+            isValid = false;
+          }
+
+          // Summary
+          validationText += "\n📋 **VALIDATION SUMMARY**\n";
+          if (isValid && issues.length === 0) {
+            validationText +=
+              "✅ Configuration is valid and ready for server creation\n";
+          } else {
+            validationText += `❌ Configuration has ${issues.length} issue(s) that must be fixed\n`;
+            issues.forEach((issue) => (validationText += `   • ${issue}\n`));
+          }
+
+          if (warnings.length > 0) {
+            validationText += `⚠️ ${warnings.length} warning(s):\n`;
+            warnings.forEach(
+              (warning) => (validationText += `   • ${warning}\n`)
+            );
+          }
+
+          if (!isValid) {
+            validationText += "\n💡 **SUGGESTIONS**\n";
+            validationText +=
+              "   • Use 'get_server_creation_flow' to see available options\n";
+            validationText +=
+              "   • Use 'list_projects' to find on-demand projects\n";
+            validationText +=
+              "   • Use 'get_available_plans' to see all plans\n";
+          }
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: validationText,
               },
             ],
           };
