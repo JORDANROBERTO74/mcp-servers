@@ -3,10 +3,7 @@
     "latitude-sh": {
       "command": "node",
       "args": ["dist/index.js"],
-      "cwd": "E:\\mcp-servers\\latitude-sh",
-      "env": {
-        "LATITUDE_API_KEY": "your-api-key"
-      }
+      "cwd": "E:\\mcp-servers\\latitude-sh"
     }
   }
 }

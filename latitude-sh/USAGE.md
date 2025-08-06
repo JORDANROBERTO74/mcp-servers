@@ -1,61 +1,54 @@
 # Latitude.sh MCP Server - Usage Guide
 
-This guide shows you how to use the latitude.sh MCP server with practical examples.
+This comprehensive guide shows you how to use the Latitude.sh MCP server with practical examples for all available tools.
 
-## Quick Start
+## 🚀 Quick Start
 
-### 1. Installation
+### 1. Installation & Setup
 
 ```bash
-# Clone and install dependencies
+# Clone and install
 cd latitude-sh
 npm install
 
-# Set up environment variables
+# Configure environment
 cp env.example .env.local
-# Edit .env.local and add your API key
+# Edit .env.local with your API key
+
+# Build the project
 npm run build
 ```
 
-### 2. Configuration
-
-Edit your `.env.local` file:
+### 2. Basic Usage
 
 ```bash
-# Required: Your Latitude.sh API key
-LATITUDE_API_KEY=your-api-key-here
-
-# Optional: Base URL for the API
-LATITUDE_BASE_URL=https://api.latitude.sh
-
-# Optional: Request timeout in milliseconds
-LATITUDE_TIMEOUT=10000
-```
-
-### 3. Basic Usage
-
-```bash
-# Run the built server
+# Run the MCP server
 node dist/index.js
 
-# Or run in development mode
-npm run dev
+# You should see:
+# Latitude.sh MCP Server running on stdio
+# ✅ Successfully connected to latitude.sh API
 ```
 
-### 4. Test Connection
+## 📁 Project Management Tools
 
-The server will automatically test the connection on startup. You should see:
+### 1. `list_projects` - List All Projects
 
+**Basic Usage:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "list_projects",
+    "arguments": {}
+  }
+}
 ```
-Latitude.sh MCP Server running on stdio
-✅ Successfully connected to latitude.sh API
-```
 
-## Tool Examples
-
-### 1. List All Projects
-
-**Request:**
+**Advanced Filtering:**
 
 ```json
 {
@@ -65,8 +58,12 @@ Latitude.sh MCP Server running on stdio
   "params": {
     "name": "list_projects",
     "arguments": {
-      "limit": 10,
-      "status": "active"
+      "page[size]": 10,
+      "page[number]": 1,
+      "status": "active",
+      "filter[environment]": "Development",
+      "filter[tags]": "javascript,react",
+      "extra_fields[projects]": "stats"
     }
   }
 }
@@ -82,14 +79,14 @@ Latitude.sh MCP Server running on stdio
     "content": [
       {
         "type": "text",
-        "text": "Found 5 projects (Page 1 of 1):\n\n📁 **My React App** (ID: proj_123)\n📝 Description: A modern React application\n👤 Owner: John Doe (john@example.com)\n📅 Created: 1/15/2024\n📅 Updated: 2/20/2024\n🏷️ Status: active\n🔒 Visibility: private\n🏷️ Tags: react, javascript\n⚙️ Framework: React\n💻 Language: JavaScript\n---"
+        "text": "Found 5 projects (Page 1 of 1):\n\n📁 **My React App** (ID: proj_123)\n📝 Description: A modern React application\n👤 Team: na (na)\n📅 Created: 1/15/2024, 10:30:00 AM\n📅 Updated: 2/20/2024, 3:45:00 PM\n🌍 Environment: Development\n💳 Billing: Normal (Normal)\n⚙️ Provisioning: on_demand\n🏷️ Tags: javascript, react\n📊 Stats: 2 servers, 0 databases, 1 storages\n\n---"
       }
     ]
   }
 }
 ```
 
-### 2. Get Project Details
+### 2. `get_project` - Get Project Details
 
 **Request:**
 
@@ -107,7 +104,42 @@ Latitude.sh MCP Server running on stdio
 }
 ```
 
-### 3. Search Projects
+### 3. `get_project_files` - Get Project File Structure
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "get_project_files",
+    "arguments": {
+      "projectId": "proj_123456789"
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "📁 **Project Files Structure**\n\n📂 Root Directory:\n   📄 README.md (2.1 KB) - Modified: 1/15/2024, 10:30:00 AM\n   📄 package.json (1.5 KB) - Modified: 1/12/2024, 2:15:00 PM\n   📄 .gitignore (0.8 KB) - Modified: 1/10/2024, 9:00:00 AM\n\n📂 src/\n   📄 index.js (5.2 KB) - Modified: 1/15/2024, 3:45:00 PM\n   📄 config.js (1.8 KB) - Modified: 1/14/2024, 11:20:00 AM\n   📂 components/\n      📄 Header.jsx (3.1 KB) - Modified: 1/13/2024, 4:30:00 PM\n      📄 Footer.jsx (1.9 KB) - Modified: 1/12/2024, 1:15:00 PM\n\n📂 public/\n   📄 index.html (2.8 KB) - Modified: 1/11/2024, 5:00:00 PM\n   📂 assets/\n      📄 logo.png (15.6 KB) - Modified: 1/10/2024, 12:00:00 PM\n\n📊 **Summary:** 8 files, 3 directories, Total size: 34.6 KB"
+      }
+    ]
+  }
+}
+```
+
+### 4. `search_projects` - Search Projects
 
 **Request:**
 
@@ -127,7 +159,7 @@ Latitude.sh MCP Server running on stdio
 }
 ```
 
-### 4. Get Project Files
+### 5. `create_project` - Create New Project
 
 **Request:**
 
@@ -135,51 +167,17 @@ Latitude.sh MCP Server running on stdio
 {
   "jsonrpc": "2.0",
   "id": 4,
-  "method": "tools/call",
-  "params": {
-    "name": "get_project_files",
-    "arguments": {
-      "projectId": "proj_123456789"
-    }
-  }
-}
-```
-
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 4,
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "📁 src\n📄 package.json (2.1 KB)\n📄 README.md (1.5 KB)\n📁 src/components\n📄 App.js (3.2 KB)\n📄 Header.js (1.8 KB)"
-      }
-    ]
-  }
-}
-```
-
-### 5. Create Project
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 5,
   "method": "tools/call",
   "params": {
     "name": "create_project",
     "arguments": {
-      "name": "My New Project",
-      "description": "A new project description",
+      "name": "AI Development Project",
+      "description": "Machine learning experiments and model training",
       "environment": "Development",
       "provisioning_type": "on_demand",
       "billing_type": "Normal",
-      "tags": ["javascript", "react"]
+      "billing_method": "Normal",
+      "tags": ["ai", "machine-learning", "python"]
     }
   }
 }
@@ -190,65 +188,48 @@ Latitude.sh MCP Server running on stdio
 ```json
 {
   "jsonrpc": "2.0",
-  "id": 5,
+  "id": 4,
   "result": {
     "content": [
       {
         "type": "text",
-        "text": "✅ Project created successfully!\n\n📁 **My New Project** (ID: proj_123)\n📝 Description: A new project description\n👤 Owner: John Doe (john@example.com)\n📅 Created: 1/15/2024\n📅 Updated: 1/15/2024\n🏷️ Status: active\n🔒 Visibility: private\n🏷️ Tags: javascript, react\n⚙️ Framework: Development\n---"
+        "text": "✅ Project created successfully!\n\n📁 **AI Development Project** (ID: proj_newId123)\n📝 Description: Machine learning experiments and model training\n👤 Team: na (na)\n📅 Created: 1/8/2025, 2:15:00 PM\n📅 Updated: 1/8/2025, 2:15:00 PM\n🌍 Environment: Development\n💳 Billing: Normal (Normal)\n⚙️ Provisioning: on_demand\n🏷️ Tags: ai, machine-learning, python\n📊 Stats: 0 servers, 0 databases, 0 storages"
       }
     ]
   }
 }
 ```
 
-### 6. Update Project
+### 6. `update_project` - Update Existing Project
 
 **Request:**
 
 ```json
 {
   "jsonrpc": "2.0",
-  "id": 6,
+  "id": 5,
   "method": "tools/call",
   "params": {
     "name": "update_project",
     "arguments": {
       "projectId": "proj_123456789",
-      "name": "Updated Project Name",
-      "description": "Updated project description",
+      "name": "Updated AI Project",
+      "description": "Advanced ML experiments with GPU acceleration",
       "environment": "Production",
-      "tags": ["updated", "production"]
+      "tags": ["ai", "gpu", "production"]
     }
   }
 }
 ```
 
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 6,
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "✅ Project updated successfully!\n\n📁 **Updated Project Name** (ID: proj_123456789)\n📝 Description: Updated project description\n👤 Owner: John Doe (john@example.com)\n📅 Created: 1/15/2024\n📅 Updated: 2/20/2024\n🏷️ Status: active\n🔒 Visibility: private\n🏷️ Tags: updated, production\n⚙️ Framework: Production\n---"
-      }
-    ]
-  }
-}
-```
-
-### 7. Delete Project
+### 7. `delete_project` - Delete Project
 
 **Request:**
 
 ```json
 {
   "jsonrpc": "2.0",
-  "id": 7,
+  "id": 6,
   "method": "tools/call",
   "params": {
     "name": "delete_project",
@@ -260,56 +241,108 @@ Latitude.sh MCP Server running on stdio
 }
 ```
 
-**Response:**
+## 🖥️ Server Management Tools
+
+### 1. `list_servers` - List All Servers
+
+**Basic Usage:**
 
 ```json
 {
   "jsonrpc": "2.0",
   "id": 7,
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "✅ Project proj_123456789 deleted successfully!"
-      }
-    ]
-  }
-}
-```
-
-**Error Response (without confirmation):**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 7,
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "❌ Project deletion cancelled. Please set 'confirm' to true to proceed with deletion."
-      }
-    ],
-    "isError": true
-  }
-}
-```
-
-### 8. List All Servers
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 8,
   "method": "tools/call",
   "params": {
     "name": "list_servers",
     "arguments": {
-      "limit": 50,
-      "page": 1,
-      "status": "running"
+      "page[size]": 20,
+      "status": "on"
+    }
+  }
+}
+```
+
+**Advanced Filtering:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 7,
+  "method": "tools/call",
+  "params": {
+    "name": "list_servers",
+    "arguments": {
+      "page[size]": 10,
+      "page[number]": 1,
+      "project": "proj_123456789",
+      "filter[region]": "NYC",
+      "filter[plan]": "c2-small-x86",
+      "filter[hostname]": "web-server"
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 7,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Found 2 servers (Page 1 of 1):\n\n🖥️ **web-server-01** (ID: sv_123)\n📋 Label: 19CS005830\n🏷️ Status: 🟢 on\n💰 Price: $0.18/hour\n🎭 Role: Bare Metal\n🌍 Region: New York, United States\n🏢 Site: NYC (NYC)\n💻 Plan: c2.small.x86 (hourly)\n📅 Created: 1/15/2024, 10:30:00 AM\n🌐 IPv4: 192.168.1.100\n🌐 IPv6: 2001:db8::1\n🔒 Locked: No\n🆘 Rescue Allowed: Yes\n📊 IPMI Status: Active\n👥 Team: MyTeam (myteam)\n📁 Project: Web Project (web-proj)\n💿 OS: Ubuntu 24.04 LTS\n📦 Distro: Ubuntu (focal)\n⚙️ Specs: Xeon E-2234 CPU @ 3.60GHz (4 cores), 32 GB, 500 GB SSD, 1 Gbit/s\n🔌 Interfaces: eth0 (public), eth1 (private)\n🏷️ Tags: web, production\n---"
+      }
+    ]
+  }
+}
+```
+
+### 2. `create_server` - Create New Server
+
+**Basic Server Creation:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 8,
+  "method": "tools/call",
+  "params": {
+    "name": "create_server",
+    "arguments": {
+      "project": "proj_123456789",
+      "plan": "c2-small-x86",
+      "operating_system": "ubuntu_24_04_x64_lts",
+      "hostname": "my-web-server",
+      "site": "NYC",
+      "billing_type": "hourly"
+    }
+  }
+}
+```
+
+**Advanced Server Creation:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 8,
+  "method": "tools/call",
+  "params": {
+    "name": "create_server",
+    "arguments": {
+      "project": "proj_123456789",
+      "plan": "c2-medium-x86",
+      "operating_system": "ubuntu_24_04_x64_lts",
+      "hostname": "production-api-server",
+      "site": "NYC",
+      "billing_type": "monthly",
+      "sshKeys": ["ssh_key_123", "ssh_key_456"],
+      "tags": ["api", "production", "nodejs"],
+      "userData": "IyEvYmluL2Jhc2gKYXB0LWdldCB1cGRhdGUKYXB0LWdldCBpbnN0YWxsIC15IG5vZGVqcw==",
+      "startupScript": "systemctl enable nginx && systemctl start nginx"
     }
   }
 }
@@ -325,14 +358,14 @@ Latitude.sh MCP Server running on stdio
     "content": [
       {
         "type": "text",
-        "text": "Found 2 servers (Page 1 of 1):\n\n🖥️ **Web Server** (ID: srv_123)\n📝 Description: Production web server\n🏷️ Status: 🟢 running\n🌍 Region: lat-south-1\n💻 Plan: lat-cpu-1\n📊 Specs: 1 CPU, 1 GB RAM, 25 GB SSD\n📅 Created: 1/15/2024\n📅 Updated: 2/20/2024\n🏷️ Tags: web, production\n---\n\n🖥️ **Database Server** (ID: srv_456)\n📝 Description: PostgreSQL database server\n🏷️ Status: 🟢 running\n🌍 Region: lat-south-1\n💻 Plan: lat-cpu-2\n📊 Specs: 2 CPU, 4 GB RAM, 100 GB SSD\n📅 Created: 1/10/2024\n📅 Updated: 2/18/2024\n🏷️ Tags: database, postgresql\n---"
+        "text": "✅ Server created successfully!\n\n🖥️ **production-api-server** (ID: sv_newServer123)\n📋 Label: 19CS005831\n🏷️ Status: ⚪ deploying\n💰 Price: $0.35/hour\n🎭 Role: Bare Metal\n🌍 Region: New York, United States\n🏢 Site: NYC (NYC)\n💻 Plan: c2.medium.x86 (monthly)\n📅 Created: 1/8/2025, 3:20:00 PM\n🌐 IPv4: 192.168.1.101\n🌐 IPv6: 2001:db8::2\n🔒 Locked: No\n🆘 Rescue Allowed: Yes\n📊 IPMI Status: Initializing\n👥 Team: MyTeam (myteam)\n📁 Project: API Project (api-proj)\n💿 OS: Ubuntu 24.04 LTS\n📦 Distro: Ubuntu (jammy)\n⚙️ Specs: Xeon E-2278G CPU @ 3.40GHz (8 cores), 64 GB, 2 X 500 GB SSD, 10 Gbit/s\n🔌 Interfaces: eth0 (public), eth1 (private)\n🏷️ Tags: api, production, nodejs\n---"
       }
     ]
   }
 }
 ```
 
-### 9. Create Server
+### 3. `get_server` - Get Server Details
 
 **Request:**
 
@@ -340,112 +373,60 @@ Latitude.sh MCP Server running on stdio
 {
   "jsonrpc": "2.0",
   "id": 9,
-  "method": "tools/call",
-  "params": {
-    "name": "create_server",
-    "arguments": {
-      "name": "My New Server",
-      "projectId": "proj_123456789",
-      "regionId": "lat-south-1",
-      "planId": "lat-cpu-1",
-      "description": "A new server for testing",
-      "tags": ["test", "development"]
-    }
-  }
-}
-```
-
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 9,
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "✅ Server created successfully!\n\n🖥️ **My New Server** (ID: srv_789)\n📝 Description: A new server for testing\n🏷️ Status: 🟡 starting\n🌍 Region: lat-south-1\n💻 Plan: lat-cpu-1\n📊 Specs: 1 CPU, 1 GB RAM, 25 GB SSD\n📅 Created: 1/15/2024\n📅 Updated: 1/15/2024\n🏷️ Tags: test, development\n🌐 IP Address: 192.168.1.100\n🔑 SSH Port: 22\n---"
-      }
-    ]
-  }
-}
-```
-
-### 10. Get Server Details
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 10,
   "method": "tools/call",
   "params": {
     "name": "get_server",
     "arguments": {
-      "serverId": "srv_123456789"
+      "serverId": "sv_123456789"
     }
   }
 }
 ```
 
-**Response:**
+### 4. `update_server` - Update Server
+
+**Request:**
 
 ```json
 {
   "jsonrpc": "2.0",
   "id": 10,
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "🖥️ **Web Server** (ID: srv_123)\n📝 Description: Production web server\n🏷️ Status: 🟢 running\n🌍 Region: lat-south-1\n💻 Plan: lat-cpu-1\n📊 Specs: 1 CPU, 1 GB RAM, 25 GB SSD\n📅 Created: 1/15/2024\n📅 Updated: 2/20/2024\n🏷️ Tags: web, production\n🌐 IP Address: 192.168.1.100\n🔑 SSH Port: 22\n🔧 OS: Ubuntu 22.04 LTS\n💾 Storage: 25 GB SSD\n🌐 Network: Public IP enabled\n---"
-      }
-    ]
-  }
-}
-```
-
-### 11. Update Server
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 11,
   "method": "tools/call",
   "params": {
     "name": "update_server",
     "arguments": {
-      "serverId": "srv_123456789",
-      "name": "Updated Server Name",
-      "description": "Updated server description",
-      "tags": ["updated", "production"]
+      "serverId": "sv_123456789",
+      "hostname": "updated-web-server",
+      "billing": "monthly",
+      "tags": ["web", "production", "updated"],
+      "project": "proj_newProject123"
     }
   }
 }
 ```
 
-**Response:**
+### 5. `delete_server` - Delete Server
+
+**Request:**
 
 ```json
 {
   "jsonrpc": "2.0",
   "id": 11,
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "✅ Server updated successfully!\n\n🖥️ **Updated Server Name** (ID: srv_123)\n📝 Description: Updated server description\n🏷️ Status: 🟢 running\n🌍 Region: lat-south-1\n💻 Plan: lat-cpu-1\n📊 Specs: 1 CPU, 1 GB RAM, 25 GB SSD\n📅 Created: 1/15/2024\n📅 Updated: 2/20/2024\n🏷️ Tags: updated, production\n🌐 IP Address: 192.168.1.100\n🔑 SSH Port: 22\n---"
-      }
-    ]
+  "method": "tools/call",
+  "params": {
+    "name": "delete_server",
+    "arguments": {
+      "server_id": "sv_123456789",
+      "reason": "Server no longer needed"
+    }
   }
 }
 ```
 
-### 12. Delete Server
+## 🧠 Smart Server Creation Tools
+
+### 1. `get_server_creation_flow` - Get Creation Workflow
 
 **Request:**
 
@@ -455,11 +436,8 @@ Latitude.sh MCP Server running on stdio
   "id": 12,
   "method": "tools/call",
   "params": {
-    "name": "delete_server",
-    "arguments": {
-      "serverId": "srv_123456789",
-      "confirm": true
-    }
+    "name": "get_server_creation_flow",
+    "arguments": {}
   }
 }
 ```
@@ -474,31 +452,14 @@ Latitude.sh MCP Server running on stdio
     "content": [
       {
         "type": "text",
-        "text": "✅ Server srv_123456789 deleted successfully!"
+        "text": "🚀 **SERVER CREATION FLOW**\n\n📋 **STEP 1: Select Project (on-demand only)**\n✅ Found 5 on-demand project(s):\n   1. AI Project (proj_123)\n   2. Web App (proj_456)\n   3. API Backend (proj_789)\n\n💻 **STEP 2: Choose Plan**\n✅ Found 21 available plans\nPopular options:\n   1. c2-small-x86 - c2.small.x86\n      CPU: 4 cores E-2234\n      Memory: 32GB\n      Regions: MIA2, SAO, SAO2, SYD...\n\n🌍 **STEP 3: Select Region**\nRegion availability depends on the selected plan. Common regions:\n   • US: NYC, LAX, DAL, CHI, MIA2\n   • LATAM: SAO, SAO2, MEX2, BGT, SAN3\n   • APAC: TYO3, SYD, SGP\n   • EU: LON, FRA, AMS\n\n🖥️ **STEP 4: Choose Operating System**\nRecommended: ubuntu_24_04_x64_lts (most compatible)\nOther options: centos_8_x64, debian_12_x64, etc.\n\n🏷️ **STEP 5: Set Hostname**\nUnique name to identify your server\n\n⚙️ **OPTIONAL CONFIGURATION**\n   • SSH Keys: For secure access\n   • Tags: For organization\n   • User Data: Initialization script\n   • Startup Script: Post-boot configuration\n   • Billing Type: hourly, monthly, yearly\n\n✅ **VALIDATION CHECKLIST**\nBefore creating a server, ensure:\n   1. Project has provisioning_type='on_demand'\n   2. Plan is available in your desired region\n   3. Operating system is supported\n   4. Hostname is unique\n\n💡 **TIPS**\n   • Use 'validate_server_config' tool before creation\n   • Start with c2-small-x86 for testing\n   • Choose region closest to your users\n   • Use hourly billing for temporary servers"
       }
     ]
   }
 }
 ```
 
-**Error Response (without confirmation):**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 12,
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "❌ Server deletion cancelled. Set 'confirm' to true to proceed with deletion."
-      }
-    ]
-  }
-}
-```
-
-### 13. Test Connection
+### 2. `validate_server_config` - Validate Configuration
 
 **Request:**
 
@@ -508,266 +469,445 @@ Latitude.sh MCP Server running on stdio
   "id": 13,
   "method": "tools/call",
   "params": {
+    "name": "validate_server_config",
+    "arguments": {
+      "project_id": "proj_123456789",
+      "plan": "c2-small-x86",
+      "region": "NYC",
+      "operating_system": "ubuntu_24_04_x64_lts"
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 13,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "🔍 **SERVER CONFIGURATION VALIDATION**\n\n📁 **PROJECT VALIDATION**\n✅ Project AI Development Project is valid (on-demand)\n\n💻 **PLAN VALIDATION**\n✅ Plan c2.small.x86 is available\n   CPU: 4 cores E-2234\n   Memory: 32GB\n\n🌍 **REGION VALIDATION**\n✅ Region 'NYC' is in stock\n\n🖥️ **OPERATING SYSTEM VALIDATION**\n✅ Operating system 'ubuntu_24_04_x64_lts' is supported\n\n📋 **VALIDATION SUMMARY**\n✅ Configuration is valid and ready for server creation"
+      }
+    ]
+  }
+}
+```
+
+**Error Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 13,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "🔍 **SERVER CONFIGURATION VALIDATION**\n\n📁 **PROJECT VALIDATION**\n❌ Project is 'reserved', must be 'on_demand'\n\n💻 **PLAN VALIDATION**\n❌ Plan 'invalid-plan' not found\n\n🌍 **REGION VALIDATION**\n❌ Region 'INVALID' not available for plan 'c2-small-x86'\n\n📋 **VALIDATION SUMMARY**\n❌ Configuration has 3 issue(s) that must be fixed\n   • Project is not on-demand\n   • Plan not found\n   • Region not available for this plan\n\n💡 **SUGGESTIONS**\n   • Use 'get_server_creation_flow' to see available options\n   • Use 'list_projects' to find on-demand projects\n   • Use 'get_available_plans' to see all plans"
+      }
+    ]
+  }
+}
+```
+
+## 📊 Plan and Region Tools
+
+### 1. `get_available_plans` - List All Plans
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 14,
+  "method": "tools/call",
+  "params": {
+    "name": "get_available_plans",
+    "arguments": {}
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 14,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "💻 **Available Server Plans**\n\n🖥️ **c2.small.x86** (ID: plan_123)\n📊 Features: ssh, user_data\n💻 CPU: E-2234 @ 3.6GHz (4 cores)\n🧠 Memory: 32 GB\n💾 Storage: 1 X 500 GB SSD\n🌐 Network: 1 X 1 Gbit/s\n💰 Pricing: $0.18/hour, $92/month, $773/year\n🌍 Regions: 8 regions available\n   • Brazil: High stock (SAO, SAO2) - Instant deploy: ubuntu_24_04_x64_lts\n   • United States: Medium stock (NYC, CHI, MIA2) - Instant deploy: ubuntu_24_04_x64_lts\n   • Australia: Medium stock (SYD) - Instant deploy: ubuntu_24_04_x64_lts\n\n🖥️ **c2.medium.x86** (ID: plan_456)\n📊 Features: ssh, raid, user_data\n💻 CPU: E-2278G @ 3.4GHz (8 cores)\n🧠 Memory: 64 GB\n💾 Storage: 2 X 500 GB SSD\n🌐 Network: 1 X 10 Gbit/s\n💰 Pricing: $0.35/hour, $179/month, $1504/year\n🌍 Regions: 9 regions available\n   • Brazil: Low stock (SAO) - Instant deploy: ubuntu_22_04_x64_lts\n   • United States: Low stock (DAL, ASH) - Instant deploy: ubuntu_24_04_x64_lts, ubuntu_22_04_x64_lts\n\n---"
+      }
+    ]
+  }
+}
+```
+
+### 2. `get_available_regions` - Get Regions for Plan
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 15,
+  "method": "tools/call",
+  "params": {
+    "name": "get_available_regions",
+    "arguments": {
+      "plan": "c2-small-x86"
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 15,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "🌍 **Available Regions for c2-small-x86**\n\n🇺🇸 **United States**\n📍 Locations: NYC, LAX, DAL, CHI, MIA2, ASH, LAX2\n📊 Stock: Medium (3/7 locations in stock)\n🚀 Instant Deploy: ubuntu_24_04_x64_lts\n\n🇧🇷 **Brazil**\n📍 Locations: SAO, SAO2\n📊 Stock: High (2/2 locations in stock)\n🚀 Instant Deploy: ubuntu_24_04_x64_lts\n\n🇦🇺 **Australia**\n📍 Locations: SYD, SYD2\n📊 Stock: Medium (1/2 locations in stock)\n🚀 Instant Deploy: ubuntu_24_04_x64_lts\n\n🇨🇱 **Chile**\n📍 Locations: SAN3\n📊 Stock: High (1/1 locations in stock)\n🚀 Instant Deploy: ubuntu_24_04_x64_lts\n\n🇯🇵 **Japan**\n📍 Locations: TYO3\n📊 Stock: Medium (1/1 locations in stock)\n🚀 Instant Deploy: ubuntu_24_04_x64_lts\n\n🇲🇽 **Mexico**\n📍 Locations: MEX2\n📊 Stock: Low (1/1 locations in stock)\n🚀 Instant Deploy: ubuntu_24_04_x64_lts\n\n🇬🇧 **United Kingdom**\n📍 Locations: LON, LON2\n📊 Stock: Unavailable (0/2 locations in stock)\n🚀 Instant Deploy: None\n\n---"
+      }
+    ]
+  }
+}
+```
+
+## 🔧 Utility Tools
+
+### 1. `test_connection` - Test API Connection
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 16,
+  "method": "tools/call",
+  "params": {
     "name": "test_connection",
     "arguments": {}
   }
 }
 ```
 
-## Integration Examples
-
-### With Claude Desktop
-
-Add to your `claude_desktop_config.json`:
+**Response:**
 
 ```json
 {
-  "mcpServers": {
-    "latitude-sh": {
-      "command": "node",
-      "args": ["/path/to/latitude-sh/dist/index.js", "your-api-key-here"]
-    }
-  }
-}
-```
-
-### With Other MCP Clients
-
-```json
-{
-  "mcpServers": {
-    "latitude-sh": {
-      "command": "node",
-      "args": ["dist/index.js", "your-api-key-here"],
-      "env": {
-        "NODE_ENV": "production"
+  "jsonrpc": "2.0",
+  "id": 16,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "✅ Successfully connected to latitude.sh API"
       }
-    }
+    ]
   }
 }
 ```
 
-## Error Handling
+## 🚀 Smart Server Creation Workflow
 
-### Common Errors
+### Complete Example: Creating a Production Web Server
 
-1. **Invalid API Key:**
-
-   ```
-   Error: Unauthorized: Invalid API key
-   ```
-
-2. **Project Not Found:**
-
-   ```
-   Error: Project not found
-   ```
-
-3. **Network Issues:**
-   ```
-   Error: Failed to connect to latitude.sh API
-   ```
-
-### Troubleshooting
-
-1. **Check API Key:**
-
-   ```bash
-   # Test your API key
-   curl -H "Authorization: Bearer your-api-key" \
-        https://api.latitude.sh/user/profile
-   ```
-
-2. **Verify Network:**
-
-   ```bash
-   # Test API connectivity
-   curl https://api.latitude.sh/health
-   ```
-
-3. **Check Server Logs:**
-   ```bash
-   # Run with verbose output
-   node dist/index.js your-api-key 2>&1 | tee server.log
-   ```
-
-## Advanced Usage
-
-### Filtering Projects
+**Step 1: Get Creation Flow**
 
 ```json
 {
-  "name": "list_projects",
-  "arguments": {
-    "limit": 20,
-    "page": 2,
-    "status": "active",
-    "tags": ["javascript", "react"],
-    "owner": "user_123"
-  }
+  "name": "get_server_creation_flow",
+  "arguments": {}
 }
 ```
 
-### Pagination
+**Step 2: Validate Configuration**
 
 ```json
 {
-  "name": "list_projects",
+  "name": "validate_server_config",
   "arguments": {
-    "limit": 10,
-    "page": 1
+    "project_id": "proj_123456789",
+    "plan": "c2-medium-x86",
+    "region": "NYC",
+    "operating_system": "ubuntu_24_04_x64_lts"
   }
 }
 ```
 
-### Search with Filters
-
-```json
-{
-  "name": "search_projects",
-  "arguments": {
-    "query": "machine learning",
-    "limit": 15,
-    "status": "active"
-  }
-}
-```
-
-### Creating Projects
-
-```json
-{
-  "name": "create_project",
-  "arguments": {
-    "name": "My React App",
-    "description": "A modern React application with TypeScript",
-    "environment": "Development",
-    "provisioning_type": "on_demand",
-    "billing_type": "Normal",
-    "tags": ["react", "typescript", "frontend"]
-  }
-}
-```
-
-### Updating Projects
-
-```json
-{
-  "name": "update_project",
-  "arguments": {
-    "projectId": "proj_123456789",
-    "name": "Updated React App",
-    "description": "Updated description with new features",
-    "environment": "Production",
-    "tags": ["react", "typescript", "production"]
-  }
-}
-```
-
-### Deleting Projects
-
-```json
-{
-  "name": "delete_project",
-  "arguments": {
-    "projectId": "proj_123456789",
-    "confirm": true
-  }
-}
-```
-
-### Listing Servers
-
-```json
-{
-  "name": "list_servers",
-  "arguments": {
-    "limit": 20,
-    "page": 1,
-    "status": "running",
-    "projectId": "proj_123456789",
-    "region": "lat-south-1",
-    "plan": "lat-cpu-1",
-    "tags": ["web", "production"]
-  }
-}
-```
-
-### Creating Servers
+**Step 3: Create Server (if validation passes)**
 
 ```json
 {
   "name": "create_server",
   "arguments": {
-    "name": "Production Web Server",
-    "projectId": "proj_123456789",
-    "regionId": "lat-south-1",
-    "planId": "lat-cpu-2",
-    "description": "High-performance web server for production",
-    "sshKeys": ["ssh_key_123", "ssh_key_456"],
+    "project": "proj_123456789",
+    "plan": "c2-medium-x86",
+    "operating_system": "ubuntu_24_04_x64_lts",
+    "hostname": "production-web-01",
+    "site": "NYC",
+    "billing_type": "monthly",
+    "sshKeys": ["ssh_key_production"],
     "tags": ["web", "production", "nginx"],
-    "userData": "#!/bin/bash\napt-get update\napt-get install -y nginx",
-    "startupScript": "systemctl start nginx"
+    "userData": "IyEvYmluL2Jhc2gKYXB0LWdldCB1cGRhdGUgJiYgYXB0LWdldCBpbnN0YWxsIC15IG5naW54",
+    "startupScript": "systemctl enable nginx && systemctl start nginx"
   }
 }
 ```
 
-### Updating Servers
+## 📱 Integration Examples
+
+### Using with Shell Scripts
+
+**Create a simple server creation script:**
+
+```bash
+#!/bin/bash
+
+# server-create.sh
+PROJECT_ID="proj_123456789"
+PLAN="c2-small-x86"
+REGION="NYC"
+HOSTNAME="test-server-$(date +%s)"
+
+# First validate
+echo "Validating configuration..."
+VALIDATION=$(echo '{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "validate_server_config",
+    "arguments": {
+      "project_id": "'$PROJECT_ID'",
+      "plan": "'$PLAN'",
+      "region": "'$REGION'",
+      "operating_system": "ubuntu_24_04_x64_lts"
+    }
+  }
+}' | node dist/index.js)
+
+if echo "$VALIDATION" | grep -q "✅ Configuration is valid"; then
+  echo "Configuration valid, creating server..."
+  echo '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+      "name": "create_server",
+      "arguments": {
+        "project": "'$PROJECT_ID'",
+        "plan": "'$PLAN'",
+        "operating_system": "ubuntu_24_04_x64_lts",
+        "hostname": "'$HOSTNAME'",
+        "site": "'$REGION'",
+        "billing_type": "hourly"
+      }
+    }
+  }' | node dist/index.js
+else
+  echo "Configuration invalid:"
+  echo "$VALIDATION"
+fi
+```
+
+### Using with Python
+
+**Python client example:**
+
+```python
+import json
+import subprocess
+import sys
+
+def call_mcp_tool(tool_name, arguments):
+    """Call an MCP tool and return the response"""
+    request = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "tools/call",
+        "params": {
+            "name": tool_name,
+            "arguments": arguments
+        }
+    }
+
+    process = subprocess.Popen(
+        ["node", "dist/index.js"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    stdout, stderr = process.communicate(json.dumps(request))
+    return json.loads(stdout.split('\n')[-2])  # Get JSON response
+
+# Example: List projects
+response = call_mcp_tool("list_projects", {"page[size]": 5})
+print(response["result"]["content"][0]["text"])
+
+# Example: Validate server config
+validation = call_mcp_tool("validate_server_config", {
+    "project_id": "proj_123456789",
+    "plan": "c2-small-x86",
+    "region": "NYC",
+    "operating_system": "ubuntu_24_04_x64_lts"
+})
+
+if "✅ Configuration is valid" in validation["result"]["content"][0]["text"]:
+    # Create server
+    server = call_mcp_tool("create_server", {
+        "project": "proj_123456789",
+        "plan": "c2-small-x86",
+        "operating_system": "ubuntu_24_04_x64_lts",
+        "hostname": "python-created-server",
+        "site": "NYC",
+        "billing_type": "hourly"
+    })
+    print("Server created:", server["result"]["content"][0]["text"])
+else:
+    print("Configuration invalid:", validation["result"]["content"][0]["text"])
+```
+
+## ⚠️ Error Handling
+
+### Common Error Patterns
+
+**Invalid API Key:**
 
 ```json
 {
-  "name": "update_server",
-  "arguments": {
-    "serverId": "srv_123456789",
-    "name": "Updated Production Server",
-    "description": "Updated description with new features",
-    "tags": ["web", "production", "updated"],
-    "sshKeys": ["ssh_key_789"]
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Error: Unauthorized: Invalid API key"
+      }
+    ],
+    "isError": true
   }
 }
 ```
 
-### Deleting Servers
+**Resource Not Found:**
 
 ```json
 {
-  "name": "delete_server",
-  "arguments": {
-    "serverId": "srv_123456789",
-    "confirm": true
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Error: Project not found"
+      }
+    ],
+    "isError": true
   }
 }
 ```
 
-## Security Best Practices
+**Validation Error:**
 
-1. **Environment Variables:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Error: Invalid arguments for create_server: [\"project\" is required]"
+      }
+    ],
+    "isError": true
+  }
+}
+```
 
-   ```bash
-   export LATITUDE_API_KEY="your-api-key"
-   node dist/index.js $LATITUDE_API_KEY
-   ```
+### Error Recovery Strategies
 
-2. **API Key Rotation:**
+1. **Always validate first**: Use `validate_server_config` before `create_server`
+2. **Check API connectivity**: Use `test_connection` if getting network errors
+3. **Verify resource existence**: Use `get_project` or `get_server` to confirm resources exist
+4. **Handle rate limits**: Implement exponential backoff for 429 responses
+5. **Parse error messages**: Extract actionable information from error responses
 
-   - Regularly rotate your API keys
-   - Use different keys for different environments
+## 🎯 Best Practices
 
-3. **Access Control:**
-   - Only grant necessary permissions
-   - Monitor API usage
+### 1. Server Creation Workflow
 
-## Performance Tips
+```json
+// 1. Always get the creation flow first
+{"name": "get_server_creation_flow", "arguments": {}}
 
-1. **Use Pagination:** Limit results to avoid large responses
-2. **Cache Results:** Implement caching for frequently accessed data
-3. **Error Handling:** Always handle potential API errors gracefully
+// 2. Validate your configuration
+{"name": "validate_server_config", "arguments": {...}}
 
-## Support
+// 3. Only create if validation passes
+{"name": "create_server", "arguments": {...}}
+```
 
-For issues and questions:
+### 2. Resource Management
 
-1. Check the error messages for specific details
-2. Verify your API key is correct and has proper permissions
-3. Test the connection using the `test_connection` tool
-4. Review the latitude.sh API documentation for endpoint changes
+- Use pagination for large lists
+- Filter results to reduce response size
+- Cache plan and region information
+- Always confirm destructive operations
+
+### 3. Security
+
+- Store API keys in environment variables
+- Use least-privilege API keys
+- Regularly rotate API keys
+- Monitor API usage
+
+### 4. Performance
+
+- Use specific filters instead of fetching all results
+- Implement client-side caching for static data
+- Use appropriate page sizes (10-50 items)
+- Handle rate limits gracefully
+
+## 🆘 Troubleshooting
+
+### Connection Issues
+
+```bash
+# Test API connectivity
+curl -H "Authorization: Bearer your-api-key" https://api.latitude.sh/user/profile
+
+# Test MCP server
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"test_connection","arguments":{}}}' | node dist/index.js
+```
+
+### Server Creation Failures
+
+1. **Use validation first**: Always validate configuration before creation
+2. **Check project type**: Ensure project is on-demand
+3. **Verify region availability**: Use `get_available_regions`
+4. **Check plan availability**: Use `get_available_plans`
+5. **Validate hostname uniqueness**: Ensure hostname is unique
+
+### Debug Mode
+
+```bash
+# Run with debug output
+NODE_ENV=development node dist/index.js 2>&1 | tee debug.log
+```
+
+This comprehensive guide covers all available tools and their usage patterns. For additional help, use the `get_server_creation_flow` tool to get real-time guidance for server creation workflows.
