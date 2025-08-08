@@ -31,13 +31,13 @@ mcp-servers/
 - **Location**: `latitude-sh/`
 - **Description**: Comprehensive MCP server for Latitude.sh infrastructure management
 - **Features**:
-  - 17 MCP tools for complete infrastructure control
+  - 19 MCP tools for complete infrastructure control
   - Project management (CRUD operations)
   - Server lifecycle management
   - Smart server creation with validation
   - Plan and region availability checking
   - 12 utility scripts for direct CLI usage
-- **Version**: v0.4.0
+- **Version**: v0.1.0
 - **API Integration**: Latitude.sh REST API
 
 ### Weather Server

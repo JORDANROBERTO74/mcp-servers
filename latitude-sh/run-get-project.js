@@ -7,7 +7,17 @@ import { dirname } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-console.log("🚀 Executing get_project for Project-test0...");
+// Get projectId from CLI
+const projectIdArg = process.argv[2];
+
+if (!projectIdArg) {
+  console.error("❌ Error: Project ID is required");
+  console.log("Usage: node run-get-project.js <project_id>");
+  console.log("Example: node run-get-project.js proj_AbC123xyz");
+  process.exit(1);
+}
+
+console.log(`🚀 Executing get_project for ${projectIdArg}...`);
 
 // Spawn a new server process for this test
 const serverProcess = spawn("node", ["dist/index.js"], {
@@ -56,7 +66,7 @@ serverProcess.on("exit", (code, signal) => {
 
 // Send get_project request after a short delay
 setTimeout(() => {
-  console.log("📝 Sending get_project request for Project-test0...");
+  console.log(`📝 Sending get_project request for ${projectIdArg}...`);
 
   const getProjectMessage =
     JSON.stringify({
@@ -66,7 +76,7 @@ setTimeout(() => {
       params: {
         name: "get_project",
         arguments: {
-          projectId: "proj_M3BeabomE0Lnb",
+          projectId: projectIdArg,
         },
       },
     }) + "\n";

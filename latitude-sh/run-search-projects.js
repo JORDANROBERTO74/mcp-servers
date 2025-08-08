@@ -1,11 +1,29 @@
-const { spawn } = require("child_process");
-const path = require("path");
+#!/usr/bin/env node
+
+import { spawn } from "child_process";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Spawn the MCP server
 const serverProcess = spawn("node", ["dist/index.js"], {
   stdio: ["pipe", "pipe", "pipe"],
   cwd: __dirname,
 });
+
+// Read query from CLI
+const query = process.argv[2];
+const limit = process.argv[3] ? Number(process.argv[3]) : 50;
+const page = process.argv[4] ? Number(process.argv[4]) : 1;
+
+if (!query) {
+  console.error("❌ Error: Search query is required");
+  console.log("Usage: node run-search-projects.js <query> [limit] [page]");
+  console.log("Example: node run-search-projects.js react 25 1");
+  process.exit(1);
+}
 
 // Prepare the search request
 const searchRequest = {
@@ -15,9 +33,9 @@ const searchRequest = {
   params: {
     name: "search_projects",
     arguments: {
-      query: "minimal",
-      limit: 50,
-      page: 1,
+      query,
+      limit,
+      page,
     },
   },
 };
