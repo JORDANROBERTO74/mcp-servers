@@ -65,7 +65,6 @@ A comprehensive Model Context Protocol (MCP) server that provides intelligent ac
 | `list_regions`                | List all global regions       | ✅ Implemented |
 | `get_region`                  | Get a specific global region  | ✅ Implemented |
 | `get_server_creation_flow`    | Smart creation workflow       | ✅ Implemented |
-| `get_server_creation_flow`    | Smart creation workflow       | ✅ Implemented |
 | `validate_server_config`      | Pre-validate server config    | ✅ Implemented |
 | `test_connection`             | Test API connection           | ✅ Implemented |
 | `get_server_deploy_config`    | Get server deploy config      | ✅ Implemented |
@@ -440,7 +439,7 @@ For issues and questions:
 
 ## 📝 Changelog
 
-### v0.4.0 (Current)
+### v0.4.0
 
 - **Updated `update_server` Tool**: Now supports official API parameters (hostname, billing, tags, project)
 - **Complete Tool Documentation**: All 17 tools fully documented with examples
@@ -464,7 +463,7 @@ For issues and questions:
 - **Pagination Support**: Proper pagination for large result sets
 - **Improved Formatting**: Better response formatting with emojis
 
-### v0.1.0
+### v0.1.0 (Current)
 
 - **Initial Release**: Basic project management functionality
 - **Project CRUD**: Create, read, update, delete projects
