@@ -2,7 +2,54 @@
 
 This guide shows you how to use the latitude.sh MCP server with practical examples.
 
+<<<<<<< Updated upstream
 ## Quick Start
+=======
+## Table of Contents
+
+- [🚀 Quick Start](#-quick-start)
+  - [1. Installation & Setup](#1-installation--setup)
+  - [2. Basic Usage](#2-basic-usage)
+- [📁 Project Management Tools](#-project-management-tools)
+  - [1. list_projects](#1-list_projects---list-all-projects)
+  - [2. get_project](#2-get_project---get-project-details)
+  - [4. search_projects](#4-search_projects---search-projects)
+  - [5. create_project](#5-create_project---create-new-project)
+  - [6. update_project](#6-update_project---update-existing-project)
+  - [7. delete_project](#7-delete_project---delete-project)
+- [🖥️ Server Management Tools](#️-server-management-tools)
+  - [1. list_servers](#1-list_servers---list-all-servers)
+  - [2. create_server](#2-create_server---create-new-server)
+  - [3. get_server](#3-get_server---get-server-details)
+  - [4. update_server](#4-update_server---update-server)
+  - [5. delete_server](#5-delete_server---delete-server)
+- [🧠 Smart Server Creation Tools](#-smart-server-creation-tools)
+  - [1. get_server_creation_flow](#1-get_server_creation_flow---get-creation-workflow)
+  - [2. validate_server_config](#2-validate_server_config---validate-configuration)
+- [📊 Plan and Region Tools](#-plan-and-region-tools)
+  - [1. get_available_plans](#1-get_available_plans---list-all-plans)
+  - [2. get_available_regions](#2-get_available_regions---get-regions-for-plan)
+  - [3. get_plan](#3-get_plan---get-plan-by-id)
+  - [3. list_regions](#3-list_regions---list-global-regions)
+  - [4. get_region](#4-get_region---get-region-by-id)
+- [🔧 Utility Tools](#-utility-tools)
+  - [1. test_connection](#1-test_connection---test-api-connection)
+  - [2. get_server_deploy_config](#2-get_server_deploy_config---retrieve-deploy-config)
+  - [3. update_server_deploy_config](#3-update_server_deploy_config---update-deploy-config)
+  - [4. lock_server](#4-lock_server---lock-a-server)
+  - [5. unlock_server](#5-unlock_server---unlock-a-server)
+- [🚀 Smart Server Creation Workflow](#-smart-server-creation-workflow)
+- [📱 Integration Examples](#-integration-examples)
+  - [Using with Shell Scripts](#using-with-shell-scripts)
+  - [Using with Python](#using-with-python)
+- [⚠️ Error Handling](#️-error-handling)
+  - [Common Error Patterns](#common-error-patterns)
+  - [Error Recovery Strategies](#error-recovery-strategies)
+- [🎯 Best Practices](#-best-practices)
+- [🆘 Troubleshooting](#-troubleshooting)
+
+## 🚀 Quick Start
+>>>>>>> Stashed changes
 
 ### 1. Installation
 

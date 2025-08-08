@@ -44,7 +44,49 @@ export class LatitudeAPIClient {
         } else if (error.response?.status === 403) {
           throw new Error("Forbidden: Insufficient permissions");
         } else if (error.response?.status === 404) {
+<<<<<<< Updated upstream
           throw new Error("Project not found");
+=======
+          const resourceHint = error.config?.url || "resource";
+          // Try to surface API error details when available
+          const details = Array.isArray(error.response?.data?.errors)
+            ? error.response.data.errors
+                .map((e: any) => e?.detail || e?.title)
+                .filter(Boolean)
+                .join("; ")
+            : error.response?.data?.message;
+          throw new Error(
+            `Not Found: ${
+              details || `The requested ${resourceHint} was not found`
+            }`
+          );
+        } else if (
+          error.response?.status === 400 ||
+          error.response?.status === 422
+        ) {
+          const errorData = error.response?.data;
+          if (errorData && errorData.errors && errorData.errors.length > 0) {
+            const errorDetails = errorData.errors
+              .map(
+                (err: any) =>
+                  `${err.title || "Validation Error"}: ${
+                    err.detail || err.message || "Unknown error"
+                  }`
+              )
+              .join("; ");
+            throw new Error(
+              `Bad Request (${error.response?.status}): ${errorDetails}`
+            );
+          } else {
+            throw new Error(
+              `Bad Request (${error.response?.status}): ${
+                error.response?.data?.message ||
+                error.message ||
+                "Invalid request"
+              }`
+            );
+          }
+>>>>>>> Stashed changes
         } else if (error.response?.status === 429) {
           throw new Error("Rate limit exceeded - please try again later");
         } else if (error.response?.status >= 500) {
@@ -905,7 +947,210 @@ export class LatitudeAPIClient {
       console.log("Cleaning up client resources");
     }
 
+<<<<<<< Updated upstream
     // Clear the client reference
     this.client = null as any;
+=======
+  /**
+   * Get a single plan by ID
+   */
+  async getPlan(planId: string): Promise<LatitudePlan> {
+    try {
+      const response = await this.client.get<LatitudePlanResponse>(
+        `/plans/${planId}`
+      );
+      return response.data.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch plan ${planId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * Get available regions for a specific plan
+   */
+  async getAvailableRegions(
+    planSlug: string,
+    _projectId?: string
+  ): Promise<LatitudePlanRegion[]> {
+    try {
+      // Use getPlan internally since it works and returns regions
+      const plan = await this.getPlan(planSlug);
+      return plan.attributes.regions || [];
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch available regions for plan ${planSlug}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * List all regions (global regions endpoint)
+   */
+  async listRegions(): Promise<GlobalRegion[]> {
+    try {
+      const response = await this.client.get<GlobalRegionList>(`/regions`);
+      return response.data.data || [];
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch regions: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * Get a specific region by ID
+   */
+  async getRegion(regionId: string): Promise<GlobalRegion> {
+    try {
+      const response = await this.client.get<GlobalRegionResponse>(
+        `/regions/${regionId}`
+      );
+      return response.data.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch region ${regionId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * Retrieve a server deploy config
+   */
+  async getServerDeployConfig(
+    serverId: string
+  ): Promise<LatitudeServerDeployConfig> {
+    try {
+      const response =
+        await this.client.get<LatitudeServerDeployConfigResponse>(
+          `/servers/${serverId}/deploy_config`
+        );
+      return response.data.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch deploy config for server ${serverId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * Update a server deploy config
+   */
+  async updateServerDeployConfig(
+    serverId: string,
+    attrs: UpdateDeployConfigParams
+  ): Promise<LatitudeServerDeployConfig> {
+    try {
+      const payload = {
+        data: {
+          type: "deploy_config",
+          id: serverId,
+          attributes: {
+            ...(attrs.hostname !== undefined && { hostname: attrs.hostname }),
+            ...(attrs.operating_system !== undefined && {
+              operating_system: attrs.operating_system,
+            }),
+            ...(attrs.raid !== undefined && { raid: attrs.raid }),
+            ...(attrs.user_data !== undefined && {
+              user_data: attrs.user_data,
+            }),
+            ...(attrs.ssh_keys !== undefined && { ssh_keys: attrs.ssh_keys }),
+            ...(attrs.partitions !== undefined && {
+              partitions: attrs.partitions,
+            }),
+            ...(attrs.ipxe_url !== undefined && { ipxe_url: attrs.ipxe_url }),
+          },
+        },
+      };
+
+      const response =
+        await this.client.patch<LatitudeServerDeployConfigResponse>(
+          `/servers/${serverId}/deploy_config`,
+          payload
+        );
+      return response.data.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to update deploy config for server ${serverId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * Lock a server (POST /servers/{serverId}/lock)
+   */
+  async lockServer(serverId: string): Promise<LatitudeServerDetails> {
+    try {
+      const response = await this.client.post<LatitudeAPIServerResponse>(
+        `/servers/${serverId}/lock`,
+        {}
+      );
+      if (!response.data.data) {
+        throw new Error("Invalid API response: missing data");
+      }
+      const server = response.data.data;
+      const serverDetails: LatitudeServerDetails = {
+        ...server,
+        metadata: {
+          tags: server.attributes.tags || [],
+          category: "server",
+          framework: server.attributes.operating_system?.name || undefined,
+          language: undefined,
+        },
+      };
+      return serverDetails;
+    } catch (error) {
+      throw new Error(
+        `Failed to lock server ${serverId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * Unlock a server (POST /servers/{serverId}/unlock)
+   */
+  async unlockServer(serverId: string): Promise<LatitudeServerDetails> {
+    try {
+      const response = await this.client.post<LatitudeAPIServerResponse>(
+        `/servers/${serverId}/unlock`,
+        {}
+      );
+      if (!response.data.data) {
+        throw new Error("Invalid API response: missing data");
+      }
+      const server = response.data.data;
+      const serverDetails: LatitudeServerDetails = {
+        ...server,
+        metadata: {
+          tags: server.attributes.tags || [],
+          category: "server",
+          framework: server.attributes.operating_system?.name || undefined,
+          language: undefined,
+        },
+      };
+      return serverDetails;
+    } catch (error) {
+      throw new Error(
+        `Failed to unlock server ${serverId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+>>>>>>> Stashed changes
   }
 }

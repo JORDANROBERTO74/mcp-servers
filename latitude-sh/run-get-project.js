@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+<<<<<<< Updated upstream
 import { spawn } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -14,46 +15,56 @@ const serverProcess = spawn("node", ["dist/index.js"], {
   stdio: ["pipe", "pipe", "pipe"],
   cwd: __dirname,
 });
+=======
+import {
+  loadEnvironment,
+  sendToMCPServer,
+  checkAPIKey,
+  displayResult,
+  handleError,
+  showHeader,
+  validateArgs,
+} from "./script-helpers.js";
 
-// Capture server output
-serverProcess.stdout.on("data", (data) => {
-  const output = data.toString().trim();
-  if (output) {
-    console.log("📤 Response:", output);
-    try {
-      const response = JSON.parse(output);
-      if (response.result && response.result.content) {
-        console.log("\n📋 Project Details:");
-        console.log(response.result.content[0].text);
-      } else if (response.error) {
-        console.log("❌ Error:", response.error);
-      }
-    } catch (e) {
-      // Not JSON, just log as is
-    }
-  }
-});
+// Load environment and check API key
+loadEnvironment();
+checkAPIKey();
 
-serverProcess.stderr.on("data", (data) => {
-  const output = data.toString().trim();
-  if (output && !output.includes("Successfully connected")) {
-    console.log("📤 Server stderr:", output);
-  }
-});
+// Show usage if help is requested
+if (process.argv[2] === "--help" || process.argv[2] === "-h") {
+  console.log("🚀 Get Project Details");
+  console.log("======================");
+  console.log("");
+  console.log("Usage: node run-get-project.js <project_id>");
+  console.log("");
+  console.log("Arguments:");
+  console.log("  project_id   The ID of the project to retrieve (required)");
+  console.log("");
+  console.log("Examples:");
+  console.log("  node run-get-project.js proj_AbC123xyz");
+  console.log("  node run-get-project.js proj_MDEOaPE110wgB");
+  process.exit(0);
+}
 
-// Handle server process events
-serverProcess.on("error", (error) => {
-  console.error("❌ Server process error:", error);
-  process.exit(1);
-});
+// Validate CLI arguments
+const [projectId] = validateArgs(
+  ["project_id"],
+  "node run-get-project.js <project_id>"
+);
+>>>>>>> Stashed changes
 
-serverProcess.on("exit", (code, signal) => {
-  console.log(
-    `📴 Server process exited with code ${code} and signal ${signal}`
-  );
-  process.exit(code || 0);
-});
+async function main() {
+  try {
+    showHeader("Get Project Details", `Retrieving project: ${projectId}`);
 
+    console.log("📤 Sending get_project request...");
+    console.log("API Key configured: Yes");
+
+    const result = await sendToMCPServer("get_project", {
+      projectId: projectId,
+    });
+
+<<<<<<< Updated upstream
 // Send get_project request after a short delay
 setTimeout(() => {
   console.log("📝 Sending get_project request for Project-test0...");
@@ -85,8 +96,12 @@ process.on("SIGINT", () => {
   console.log("🛑 Received SIGINT, terminating...");
   serverProcess.kill("SIGTERM");
 });
+=======
+    displayResult(result, "Project Details");
+  } catch (error) {
+    handleError(error, "retrieving project details");
+  }
+}
+>>>>>>> Stashed changes
 
-process.on("SIGTERM", () => {
-  console.log("🛑 Received SIGTERM, terminating...");
-  serverProcess.kill("SIGTERM");
-});
+main();

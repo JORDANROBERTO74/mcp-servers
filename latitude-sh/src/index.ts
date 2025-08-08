@@ -85,8 +85,43 @@ const SearchProjectsArgsSchema = z.object({
     .describe("Filter by project status"),
 });
 
+<<<<<<< Updated upstream
 const GetProjectFilesArgsSchema = z.object({
   projectId: z
+=======
+const TestConnectionArgsSchema = z.object({});
+
+const GetAvailablePlansArgsSchema = z.object({});
+
+const GetServerCreationFlowArgsSchema = z.object({});
+
+const ValidateServerConfigArgsSchema = z.object({
+  project_id: z.string().describe("Project ID to validate"),
+  plan: z.string().describe("Plan slug to validate"),
+  region: z.string().describe("Region code to validate"),
+  operating_system: z.string().optional().describe("OS to validate"),
+});
+
+const GetAvailableRegionsArgsSchema = z.object({
+  plan: z
+    .string()
+    .min(1)
+    .describe("Plan ID (plan_...) or slug to check availability for"),
+  project_id: z
+    .string()
+    .optional()
+    .describe("Project ID for project-specific region availability"),
+});
+
+const ListRegionsArgsSchema = z.object({});
+
+const GetRegionArgsSchema = z.object({
+  regionId: z.string().min(1).describe("Region ID to retrieve (e.g., loc_...)"),
+});
+
+const GetServerDeployConfigArgsSchema = z.object({
+  serverId: z
+>>>>>>> Stashed changes
     .string()
     .min(1)
     .regex(
@@ -653,15 +688,17 @@ try {
             throw new Error("Invalid API response: missing projects data");
           }
 
-          const formatted = formatProjectList(
-            result.projects,
-            result.total,
-            result.page,
-            result.limit
-          );
+          const apiLike = {
+            data: result.projects,
+            meta: {
+              total: result.total,
+              page: result.page,
+              limit: result.limit,
+            },
+          };
 
           return {
-            content: [{ type: "text", text: formatted }],
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
           };
         }
 
@@ -676,10 +713,10 @@ try {
           const project = await latitudeClient.getProject(
             parsed.data.projectId
           );
-          const formatted = formatProject(project);
+          const apiLike = { data: project, meta: {} };
 
           return {
-            content: [{ type: "text", text: formatted }],
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
           };
         }
 
@@ -704,15 +741,17 @@ try {
             throw new Error("Invalid API response: missing projects data");
           }
 
-          const formatted = formatProjectList(
-            result.projects,
-            result.total,
-            result.page,
-            result.limit
-          );
+          const apiLike = {
+            data: result.projects,
+            meta: {
+              total: result.total,
+              page: result.page,
+              limit: result.limit,
+            },
+          };
 
           return {
-            content: [{ type: "text", text: formatted }],
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
           };
         }
 
@@ -743,15 +782,10 @@ try {
           }
 
           const project = await latitudeClient.createProject(parsed.data);
-          const formatted = formatProject(project);
+          const apiLike = { data: project, meta: {} };
 
           return {
-            content: [
-              {
-                type: "text",
-                text: `✅ Project created successfully!\n\n${formatted}`,
-              },
-            ],
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
           };
         }
 
@@ -768,15 +802,10 @@ try {
             projectId,
             updateData
           );
-          const formatted = formatProject(project);
+          const apiLike = { data: project, meta: {} };
 
           return {
-            content: [
-              {
-                type: "text",
-                text: `✅ Project updated successfully!\n\n${formatted}`,
-              },
-            ],
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
           };
         }
 
@@ -804,13 +833,13 @@ try {
 
           await latitudeClient.deleteProject(projectId);
 
+          const apiLike = {
+            data: null,
+            meta: { deleted: true, project_id: projectId },
+          };
+
           return {
-            content: [
-              {
-                type: "text",
-                text: `✅ Project ${projectId} deleted successfully!`,
-              },
-            ],
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
           };
         }
 
@@ -828,15 +857,19 @@ try {
             throw new Error("Invalid API response: missing servers data");
           }
 
-          const formatted = formatServerList(
-            result.servers,
-            result.total,
-            result.page,
-            result.limit
-          );
+          const serversApi = {
+            data: result.servers,
+            meta: {
+              total: result.total,
+              page: result.page,
+              limit: result.limit,
+            },
+          };
 
           return {
-            content: [{ type: "text", text: formatted }],
+            content: [
+              { type: "text", text: JSON.stringify(serversApi, null, 2) },
+            ],
           };
         }
 
@@ -849,15 +882,10 @@ try {
           }
 
           const server = await latitudeClient.createServer(parsed.data);
-          const formatted = formatServer(server);
+          const apiLike = { data: server, meta: {} };
 
           return {
-            content: [
-              {
-                type: "text",
-                text: `✅ Server created successfully!\n\n${formatted}`,
-              },
-            ],
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
           };
         }
 
@@ -870,10 +898,10 @@ try {
           }
 
           const server = await latitudeClient.getServer(parsed.data.serverId);
-          const formatted = formatServer(server);
+          const apiLike = { data: server, meta: {} };
 
           return {
-            content: [{ type: "text", text: formatted }],
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
           };
         }
 
@@ -889,15 +917,10 @@ try {
             parsed.data.serverId,
             parsed.data
           );
-          const formatted = formatServer(server);
+          const apiLike = { data: server, meta: {} };
 
           return {
-            content: [
-              {
-                type: "text",
-                text: `✅ Server updated successfully!\n\n${formatted}`,
-              },
-            ],
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
           };
         }
 
@@ -920,6 +943,7 @@ try {
             };
           }
 
+<<<<<<< Updated upstream
           await latitudeClient.deleteServer(parsed.data.serverId);
 
           return {
@@ -929,6 +953,239 @@ try {
                 text: `✅ Server ${parsed.data.serverId} deleted successfully!`,
               },
             ],
+=======
+          // Delete the server
+          await latitudeClient.deleteServer(parsed.data.server_id);
+
+          const apiLike = {
+            data: null,
+            meta: {
+              deleted: true,
+              server_id: parsed.data.server_id,
+              reason: parsed.data.reason || null,
+            },
+          };
+
+          return {
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
+          };
+        }
+
+        case "get_available_plans": {
+          const parsed = GetAvailablePlansArgsSchema.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for get_available_plans: ${parsed.error}`
+            );
+          }
+
+          const plans = await latitudeClient.getAvailablePlans();
+          const apiLike = { data: plans, meta: { count: plans.length } };
+
+          return {
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
+          };
+        }
+
+        case "get_plan": {
+          const PlanArgs = z.object({
+            planId: z
+              .string()
+              .min(1)
+              .regex(
+                /^plan_[a-zA-Z0-9]+$/,
+                "Plan ID must be in format 'plan_XXXX'"
+              )
+              .describe("The ID of the plan to retrieve (e.g., plan_...)"),
+          });
+          const parsed = PlanArgs.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(`Invalid arguments for get_plan: ${parsed.error}`);
+          }
+
+          const plan = await latitudeClient.getPlan(parsed.data.planId);
+          const apiLike = { data: plan, meta: {} };
+
+          return {
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
+          };
+        }
+
+        case "get_available_regions": {
+          const parsed = GetAvailableRegionsArgsSchema.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for get_available_regions: ${parsed.error}`
+            );
+          }
+
+          const regions = await latitudeClient.getAvailableRegions(
+            parsed.data.plan,
+            parsed.data.project_id
+          );
+
+          const apiLike = { data: regions, meta: { plan: parsed.data.plan } };
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(apiLike, null, 2),
+              },
+            ],
+          };
+        }
+
+        case "list_regions": {
+          const parsed = ListRegionsArgsSchema.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for list_regions: ${parsed.error}`
+            );
+          }
+
+          const regions = await latitudeClient.listRegions();
+          const apiLike = {
+            data: regions.map((r) => ({
+              id: r.id,
+              type: r.type,
+              attributes: r.attributes,
+            })),
+            meta: {},
+          };
+
+          return {
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
+          };
+        }
+
+        case "get_region": {
+          const parsed = GetRegionArgsSchema.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for get_region: ${parsed.error}`
+            );
+          }
+
+          const region = await latitudeClient.getRegion(parsed.data.regionId);
+          const apiLike = { data: region, meta: {} };
+
+          return {
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
+          };
+        }
+
+        case "get_server_deploy_config": {
+          const parsed = GetServerDeployConfigArgsSchema.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for get_server_deploy_config: ${parsed.error}`
+            );
+          }
+
+          const cfg = await latitudeClient.getServerDeployConfig(
+            parsed.data.serverId
+          );
+          const apiLike = { data: cfg, meta: {} };
+
+          return {
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
+          };
+        }
+
+        case "update_server_deploy_config": {
+          const UpdateArgs = z.object({
+            serverId: z
+              .string()
+              .min(1)
+              .regex(
+                /^[a-zA-Z0-9_-]+$/,
+                "Server ID must contain only letters, numbers, hyphens, and underscores"
+              ),
+            hostname: z.string().optional(),
+            operating_system: z.string().optional(),
+            raid: z.string().optional(),
+            user_data: z.number().int().nullable().optional(),
+            ssh_keys: z.array(z.number().int()).optional(),
+            partitions: z
+              .array(
+                z.object({
+                  path: z.string(),
+                  size_in_gb: z.number().int(),
+                  filesystem_type: z.string(),
+                })
+              )
+              .optional(),
+            ipxe_url: z.string().url().nullable().optional(),
+          });
+
+          const parsed = UpdateArgs.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for update_server_deploy_config: ${parsed.error}`
+            );
+          }
+
+          const { serverId, ...attrs } = parsed.data as any;
+          const updated = await latitudeClient.updateServerDeployConfig(
+            serverId,
+            attrs
+          );
+          const apiLike = { data: updated, meta: {} };
+
+          return {
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
+          };
+        }
+
+        case "lock_server": {
+          const LockArgs = z.object({
+            serverId: z
+              .string()
+              .min(1)
+              .regex(
+                /^[a-zA-Z0-9_-]+$/,
+                "Server ID must contain only letters, numbers, hyphens, and underscores"
+              ),
+          });
+          const parsed = LockArgs.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for lock_server: ${parsed.error}`
+            );
+          }
+
+          const server = await latitudeClient.lockServer(parsed.data.serverId);
+          const apiLike = { data: server, meta: { locked: true } };
+          return {
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
+          };
+        }
+
+        case "unlock_server": {
+          const UnlockArgs = z.object({
+            serverId: z
+              .string()
+              .min(1)
+              .regex(
+                /^[a-zA-Z0-9_-]+$/,
+                "Server ID must contain only letters, numbers, hyphens, and underscores"
+              ),
+          });
+          const parsed = UnlockArgs.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for unlock_server: ${parsed.error}`
+            );
+          }
+
+          const server = await latitudeClient.unlockServer(
+            parsed.data.serverId
+          );
+          const apiLike = { data: server, meta: { locked: false } };
+          return {
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
+>>>>>>> Stashed changes
           };
         }
 
@@ -952,6 +1209,154 @@ try {
           };
         }
 
+<<<<<<< Updated upstream
+=======
+        case "get_server_creation_flow": {
+          const parsed = GetServerCreationFlowArgsSchema.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for get_server_creation_flow: ${parsed.error}`
+            );
+          }
+
+          // Get available projects (on-demand only)
+          const allProjects = await latitudeClient.getProjects({});
+          const onDemandProjects = allProjects.projects.filter(
+            (project: any) =>
+              project.attributes.provisioning_type === "on_demand"
+          );
+
+          // Get available plans
+          const plans = await latitudeClient.getAvailablePlans();
+
+          // Popular plan slugs (helper metadata only)
+          const popularPlanSlugs = [
+            "c2-small-x86",
+            "c2-medium-x86",
+            "c3-small-x86",
+            "m3-large-x86",
+          ];
+
+          const data = {
+            projects_on_demand: onDemandProjects,
+            plans,
+            popular_plan_slugs: popularPlanSlugs,
+          };
+          const meta = {
+            total_on_demand_projects: onDemandProjects.length,
+            total_plans: plans.length,
+          };
+
+          return {
+            content: [
+              { type: "text", text: JSON.stringify({ data, meta }, null, 2) },
+            ],
+          };
+        }
+
+        case "validate_server_config": {
+          const parsed = ValidateServerConfigArgsSchema.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for validate_server_config: ${parsed.error}`
+            );
+          }
+
+          let isValid = true;
+          const issues = [];
+          const warnings = [];
+
+          try {
+            // Validate project
+            const projects = await latitudeClient.getProjects({});
+            const project = projects.projects.find(
+              (p: any) => p.id === parsed.data.project_id
+            );
+
+            if (!project) {
+              issues.push("Project not found");
+              isValid = false;
+            } else if (project.attributes.provisioning_type !== "on_demand") {
+              issues.push("Project is not on-demand");
+              isValid = false;
+            } else {
+              // ok
+            }
+
+            // Validate plan
+            const plans = await latitudeClient.getAvailablePlans();
+            const plan = plans.find(
+              (p) => p.attributes.slug === parsed.data.plan
+            );
+
+            if (!plan) {
+              issues.push("Plan not found");
+              isValid = false;
+            } else {
+              // ok
+            }
+
+            // Validate region
+            if (plan) {
+              const planRegions = plan.attributes.regions;
+              const regionAvailable = planRegions.some(
+                (region) =>
+                  region.locations.available.includes(parsed.data.region) ||
+                  region.locations.in_stock.includes(parsed.data.region)
+              );
+
+              if (!regionAvailable) {
+                issues.push("Region not available for this plan");
+                isValid = false;
+              } else {
+                const inStock = planRegions.some((region) =>
+                  region.locations.in_stock.includes(parsed.data.region)
+                );
+                if (!inStock) warnings.push("Region may have limited stock");
+              }
+            }
+
+            // Validate OS
+            if (parsed.data.operating_system) {
+              const commonOS = [
+                "ubuntu_24_04_x64_lts",
+                "ubuntu_22_04_x64_lts",
+                "centos_8_x64",
+                "debian_12_x64",
+                "rocky_9_x64",
+              ];
+              if (commonOS.includes(parsed.data.operating_system)) {
+                // ok
+              } else {
+                warnings.push("Uncommon operating system");
+              }
+            }
+          } catch (error) {
+            issues.push("API error during validation");
+            isValid = false;
+          }
+
+          const data = {
+            valid: isValid && issues.length === 0,
+            issues,
+            warnings,
+            checks: {
+              project_id: parsed.data.project_id,
+              plan_slug: parsed.data.plan,
+              region: parsed.data.region,
+              operating_system: parsed.data.operating_system,
+            },
+          };
+          const meta = {} as Record<string, unknown>;
+
+          return {
+            content: [
+              { type: "text", text: JSON.stringify({ data, meta }, null, 2) },
+            ],
+          };
+        }
+
+>>>>>>> Stashed changes
         default:
           throw new Error(`Unknown tool: ${name}`);
       }
