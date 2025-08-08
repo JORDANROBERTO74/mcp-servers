@@ -16,6 +16,14 @@ import type {
   LatitudeAPIServerResponse,
   LatitudePlan,
   LatitudePlanList,
+  LatitudePlanRegion,
+  LatitudePlanResponse,
+  GlobalRegion,
+  GlobalRegionList,
+  GlobalRegionResponse,
+  LatitudeServerDeployConfigResponse,
+  LatitudeServerDeployConfig,
+  UpdateDeployConfigParams,
 } from "../types/latitude.js";
 
 export class LatitudeAPIClient {
@@ -24,11 +32,14 @@ export class LatitudeAPIClient {
 
   constructor(config: LatitudeAPIConfig) {
     this.apiKey = config.apiKey;
+    const authHeader = this.apiKey.startsWith("Bearer ")
+      ? this.apiKey
+      : `Bearer ${this.apiKey}`;
     this.client = axios.create({
       baseURL: config.baseURL || "https://api.latitude.sh",
       timeout: config.timeout || 10000,
       headers: {
-        Authorization: this.apiKey,
+        Authorization: authHeader,
         "Content-Type": "application/vnd.api+json",
         Accept: "application/vnd.api+json",
       },
@@ -114,9 +125,7 @@ export class LatitudeAPIClient {
         apiParams["page[number]"] = params.page;
       }
 
-      // Handle basic filters
-      if (params?.status) apiParams.status = params.status;
-      if (params?.owner) apiParams.owner = params.owner;
+      // No undocumented basic filters
 
       // Handle advanced filters
       if (params?.["filter[name]"])
@@ -141,8 +150,7 @@ export class LatitudeAPIClient {
         apiParams["filter[tags]"] = params.tags.join(",");
       }
 
-      // Legacy support for query
-      if (params?.query) apiParams.query = params.query;
+      // No query passthrough (use filter[name] via searchProjects)
 
       const response: AxiosResponse<LatitudeAPIProjectsResponse> =
         await this.client.get("/projects", { params: apiParams });
@@ -153,12 +161,14 @@ export class LatitudeAPIClient {
 
       // Use the projects directly from the API response
       const projects = response.data.data;
+      const meta = response.data.meta?.pagination;
 
       return {
         projects,
-        total: projects.length,
-        page: params?.["page[number]"] || params?.page || 1,
-        limit: params?.["page[size]"] || params?.limit || 20,
+        total: meta?.total_count ?? projects.length,
+        page:
+          meta?.current_page ?? params?.["page[number]"] ?? params?.page ?? 1,
+        limit: meta?.per_page ?? params?.["page[size]"] ?? params?.limit ?? 20,
       };
     } catch (error) {
       throw new Error(
@@ -186,7 +196,6 @@ export class LatitudeAPIClient {
       // Return the project directly with additional metadata
       const projectDetails: LatitudeProjectDetails = {
         ...project,
-        files: [], // Default empty files array
         metadata: {
           tags: project.attributes.tags || [],
           category: "default",
@@ -212,27 +221,22 @@ export class LatitudeAPIClient {
     query: string,
     params?: Omit<ProjectSearchParams, "query">
   ): Promise<LatitudeProjectList> {
-    return this.getProjects({ ...params, query });
+    // Map 'query' to filter[name]
+    const mapped: ProjectSearchParams = { ...params, ["filter[name]"]: query };
+    return this.getProjects(mapped);
   }
 
-  /**
-   * Get projects by status
-   */
-  async getProjectsByStatus(
-    status: "active" | "inactive" | "archived",
-    params?: Omit<ProjectSearchParams, "status">
-  ): Promise<LatitudeProjectList> {
-    return this.getProjects({ ...params, status });
-  }
+  // (Removed) getProjectsByStatus: Not supported by Latitude.sh API
 
   /**
    * Get projects by owner
    */
   async getProjectsByOwner(
-    ownerId: string,
-    params?: Omit<ProjectSearchParams, "owner">
+    _ownerId: string,
+    params?: Omit<ProjectSearchParams, never>
   ): Promise<LatitudeProjectList> {
-    return this.getProjects({ ...params, owner: ownerId });
+    // Not supported by API; fallback to plain list
+    return this.getProjects({ ...params });
   }
 
   /**
@@ -269,9 +273,7 @@ export class LatitudeAPIClient {
             ...(projectData.environment && {
               environment: projectData.environment,
             }),
-            ...(projectData.provisioning_type && {
-              provisioning_type: projectData.provisioning_type,
-            }),
+            provisioning_type: projectData.provisioning_type ?? "on_demand",
             ...(projectData.billing_type && {
               billing_type: projectData.billing_type,
             }),
@@ -298,7 +300,6 @@ export class LatitudeAPIClient {
       // Return the project directly with additional metadata
       const projectDetails: LatitudeProjectDetails = {
         ...project,
-        files: [],
         metadata: {
           tags: project.attributes.tags || [],
           category: "default",
@@ -364,7 +365,6 @@ export class LatitudeAPIClient {
       // Return the project directly with additional metadata
       const projectDetails: LatitudeProjectDetails = {
         ...project,
-        files: [],
         metadata: {
           tags: project.attributes.tags || [],
           category: "default",
@@ -397,24 +397,6 @@ export class LatitudeAPIClient {
     } catch (error) {
       throw new Error(
         `Failed to delete project ${projectId}: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-    }
-  }
-
-  /**
-   * Get project files (if available)
-   */
-  async getProjectFiles(
-    projectId: string
-  ): Promise<LatitudeProjectDetails["files"]> {
-    try {
-      const project = await this.getProject(projectId);
-      return project.files || [];
-    } catch (error) {
-      throw new Error(
-        `Failed to fetch project files: ${
           error instanceof Error ? error.message : String(error)
         }`
       );
@@ -527,12 +509,14 @@ export class LatitudeAPIClient {
 
       // Use the servers directly from the API response
       const servers = response.data.data;
+      const meta = response.data.meta?.pagination;
 
       return {
         servers,
-        total: servers.length,
-        page: params?.["page[number]"] || params?.page || 1,
-        limit: params?.["page[size]"] || params?.limit || 20,
+        total: meta?.total_count ?? servers.length,
+        page:
+          meta?.current_page ?? params?.["page[number]"] ?? params?.page ?? 1,
+        limit: meta?.per_page ?? params?.["page[size]"] ?? params?.limit ?? 20,
       };
     } catch (error) {
       throw new Error(
@@ -727,12 +711,32 @@ export class LatitudeAPIClient {
   }
 
   /**
+   * Get a single plan by ID
+   */
+  async getPlan(planId: string): Promise<LatitudePlan> {
+    try {
+      const response = await this.client.get<LatitudePlanResponse>(
+        `/plans/${planId}`
+      );
+      return response.data.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch plan ${planId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
    * Get available regions for a specific plan
    */
-  async getAvailableRegions(planSlug: string): Promise<any[]> {
+  async getAvailableRegions(planSlug: string): Promise<LatitudePlanRegion[]> {
     try {
-      const response = await this.client.get(`/plans/${planSlug}/regions`);
-      return response.data.data || [];
+      const response = await this.client.get<LatitudePlanResponse>(
+        `/plans/${planSlug}`
+      );
+      return response.data.data.attributes.regions || [];
     } catch (error) {
       throw new Error(
         `Failed to fetch available regions for plan ${planSlug}: ${
@@ -743,9 +747,166 @@ export class LatitudeAPIClient {
   }
 
   /**
-   * Destroy the client
+   * List all regions (global regions endpoint)
    */
-  destroy(): void {
-    // Clean up any resources if needed
+  async listRegions(): Promise<GlobalRegion[]> {
+    try {
+      const response = await this.client.get<GlobalRegionList>(`/regions`);
+      return response.data.data || [];
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch regions: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * Get a specific region by ID
+   */
+  async getRegion(regionId: string): Promise<GlobalRegion> {
+    try {
+      const response = await this.client.get<GlobalRegionResponse>(
+        `/regions/${regionId}`
+      );
+      return response.data.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch region ${regionId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * Retrieve a server deploy config
+   */
+  async getServerDeployConfig(
+    serverId: string
+  ): Promise<LatitudeServerDeployConfig> {
+    try {
+      const response =
+        await this.client.get<LatitudeServerDeployConfigResponse>(
+          `/servers/${serverId}/deploy_config`
+        );
+      return response.data.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch deploy config for server ${serverId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * Update a server deploy config
+   */
+  async updateServerDeployConfig(
+    serverId: string,
+    attrs: UpdateDeployConfigParams
+  ): Promise<LatitudeServerDeployConfig> {
+    try {
+      const payload = {
+        data: {
+          type: "deploy_config",
+          id: serverId,
+          attributes: {
+            ...(attrs.hostname !== undefined && { hostname: attrs.hostname }),
+            ...(attrs.operating_system !== undefined && {
+              operating_system: attrs.operating_system,
+            }),
+            ...(attrs.raid !== undefined && { raid: attrs.raid }),
+            ...(attrs.user_data !== undefined && {
+              user_data: attrs.user_data,
+            }),
+            ...(attrs.ssh_keys !== undefined && { ssh_keys: attrs.ssh_keys }),
+            ...(attrs.partitions !== undefined && {
+              partitions: attrs.partitions,
+            }),
+            ...(attrs.ipxe_url !== undefined && { ipxe_url: attrs.ipxe_url }),
+          },
+        },
+      };
+
+      const response =
+        await this.client.patch<LatitudeServerDeployConfigResponse>(
+          `/servers/${serverId}/deploy_config`,
+          payload
+        );
+      return response.data.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to update deploy config for server ${serverId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * Lock a server (POST /servers/{serverId}/lock)
+   */
+  async lockServer(serverId: string): Promise<LatitudeServerDetails> {
+    try {
+      const response = await this.client.post<LatitudeAPIServerResponse>(
+        `/servers/${serverId}/lock`,
+        {}
+      );
+      if (!response.data.data) {
+        throw new Error("Invalid API response: missing data");
+      }
+      const server = response.data.data;
+      const serverDetails: LatitudeServerDetails = {
+        ...server,
+        metadata: {
+          tags: server.attributes.tags || [],
+          category: "server",
+          framework: server.attributes.operating_system?.name || undefined,
+          language: undefined,
+        },
+      };
+      return serverDetails;
+    } catch (error) {
+      throw new Error(
+        `Failed to lock server ${serverId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * Unlock a server (POST /servers/{serverId}/unlock)
+   */
+  async unlockServer(serverId: string): Promise<LatitudeServerDetails> {
+    try {
+      const response = await this.client.post<LatitudeAPIServerResponse>(
+        `/servers/${serverId}/unlock`,
+        {}
+      );
+      if (!response.data.data) {
+        throw new Error("Invalid API response: missing data");
+      }
+      const server = response.data.data;
+      const serverDetails: LatitudeServerDetails = {
+        ...server,
+        metadata: {
+          tags: server.attributes.tags || [],
+          category: "server",
+          framework: server.attributes.operating_system?.name || undefined,
+          language: undefined,
+        },
+      };
+      return serverDetails;
+    } catch (error) {
+      throw new Error(
+        `Failed to unlock server ${serverId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
   }
 }

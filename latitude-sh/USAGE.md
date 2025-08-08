@@ -22,12 +22,11 @@ npm run build
 ### 2. Basic Usage
 
 ```bash
-# Run the MCP server
-node dist/index.js
+# Run the MCP server (built)
+npm run start
 
-# You should see:
-# Latitude.sh MCP Server running on stdio
-# ✅ Successfully connected to latitude.sh API
+# Or run in dev mode
+npm run dev
 ```
 
 ## 📁 Project Management Tools
@@ -60,10 +59,9 @@ node dist/index.js
     "arguments": {
       "page[size]": 10,
       "page[number]": 1,
-      "status": "active",
       "filter[environment]": "Development",
-      "filter[tags]": "javascript,react",
-      "extra_fields[projects]": "stats"
+      "filter[tags]": "tag_1,tag_2",
+      "extra_fields[projects]": "last_renewal_date,next_renewal_date"
     }
   }
 }
@@ -104,41 +102,6 @@ node dist/index.js
 }
 ```
 
-### 3. `get_project_files` - Get Project File Structure
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 3,
-  "method": "tools/call",
-  "params": {
-    "name": "get_project_files",
-    "arguments": {
-      "projectId": "proj_123456789"
-    }
-  }
-}
-```
-
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 3,
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "📁 **Project Files Structure**\n\n📂 Root Directory:\n   📄 README.md (2.1 KB) - Modified: 1/15/2024, 10:30:00 AM\n   📄 package.json (1.5 KB) - Modified: 1/12/2024, 2:15:00 PM\n   📄 .gitignore (0.8 KB) - Modified: 1/10/2024, 9:00:00 AM\n\n📂 src/\n   📄 index.js (5.2 KB) - Modified: 1/15/2024, 3:45:00 PM\n   📄 config.js (1.8 KB) - Modified: 1/14/2024, 11:20:00 AM\n   📂 components/\n      📄 Header.jsx (3.1 KB) - Modified: 1/13/2024, 4:30:00 PM\n      📄 Footer.jsx (1.9 KB) - Modified: 1/12/2024, 1:15:00 PM\n\n📂 public/\n   📄 index.html (2.8 KB) - Modified: 1/11/2024, 5:00:00 PM\n   📂 assets/\n      📄 logo.png (15.6 KB) - Modified: 1/10/2024, 12:00:00 PM\n\n📊 **Summary:** 8 files, 3 directories, Total size: 34.6 KB"
-      }
-    ]
-  }
-}
-```
-
 ### 4. `search_projects` - Search Projects
 
 **Request:**
@@ -152,8 +115,7 @@ node dist/index.js
     "name": "search_projects",
     "arguments": {
       "query": "machine learning",
-      "limit": 5,
-      "status": "active"
+      "limit": 5
     }
   }
 }
@@ -175,7 +137,7 @@ node dist/index.js
       "description": "Machine learning experiments and model training",
       "environment": "Development",
       "provisioning_type": "on_demand",
-      "billing_type": "Normal",
+
       "billing_method": "Normal",
       "tags": ["ai", "machine-learning", "python"]
     }
@@ -256,7 +218,7 @@ node dist/index.js
     "name": "list_servers",
     "arguments": {
       "page[size]": 20,
-      "status": "on"
+      "status": "deploying"
     }
   }
 }
@@ -274,7 +236,7 @@ node dist/index.js
     "arguments": {
       "page[size]": 10,
       "page[number]": 1,
-      "project": "proj_123456789",
+      "projectId": "proj_123456789",
       "filter[region]": "NYC",
       "filter[plan]": "c2-small-x86",
       "filter[hostname]": "web-server"
@@ -316,8 +278,7 @@ node dist/index.js
       "plan": "c2-small-x86",
       "operating_system": "ubuntu_24_04_x64_lts",
       "hostname": "my-web-server",
-      "site": "NYC",
-      "billing_type": "hourly"
+      "site": "NYC"
     }
   }
 }
@@ -338,7 +299,6 @@ node dist/index.js
       "operating_system": "ubuntu_24_04_x64_lts",
       "hostname": "production-api-server",
       "site": "NYC",
-      "billing_type": "monthly",
       "sshKeys": ["ssh_key_123", "ssh_key_456"],
       "tags": ["api", "production", "nodejs"],
       "userData": "IyEvYmluL2Jhc2gKYXB0LWdldCB1cGRhdGUKYXB0LWdldCBpbnN0YWxsIC15IG5vZGVqcw==",
@@ -418,7 +378,8 @@ node dist/index.js
     "name": "delete_server",
     "arguments": {
       "server_id": "sv_123456789",
-      "reason": "Server no longer needed"
+      "reason": "Server no longer needed",
+      "confirm": true
     }
   }
 }
@@ -577,9 +538,74 @@ node dist/index.js
     "content": [
       {
         "type": "text",
-        "text": "🌍 **Available Regions for c2-small-x86**\n\n🇺🇸 **United States**\n📍 Locations: NYC, LAX, DAL, CHI, MIA2, ASH, LAX2\n📊 Stock: Medium (3/7 locations in stock)\n🚀 Instant Deploy: ubuntu_24_04_x64_lts\n\n🇧🇷 **Brazil**\n📍 Locations: SAO, SAO2\n📊 Stock: High (2/2 locations in stock)\n🚀 Instant Deploy: ubuntu_24_04_x64_lts\n\n🇦🇺 **Australia**\n📍 Locations: SYD, SYD2\n📊 Stock: Medium (1/2 locations in stock)\n🚀 Instant Deploy: ubuntu_24_04_x64_lts\n\n🇨🇱 **Chile**\n📍 Locations: SAN3\n📊 Stock: High (1/1 locations in stock)\n🚀 Instant Deploy: ubuntu_24_04_x64_lts\n\n🇯🇵 **Japan**\n📍 Locations: TYO3\n📊 Stock: Medium (1/1 locations in stock)\n🚀 Instant Deploy: ubuntu_24_04_x64_lts\n\n🇲🇽 **Mexico**\n📍 Locations: MEX2\n📊 Stock: Low (1/1 locations in stock)\n🚀 Instant Deploy: ubuntu_24_04_x64_lts\n\n🇬🇧 **United Kingdom**\n📍 Locations: LON, LON2\n📊 Stock: Unavailable (0/2 locations in stock)\n🚀 Instant Deploy: None\n\n---"
+        "text": "🌍 Available Regions for plan c2-small-x86:\n\n1. 🟡 United States\n   📍 In stock:  \n   ⏳ Available: DAL, LAX, NYC, CHI, ASH, MIA2, LAX2\n   💵 USD: $0.04/min, $2.4/hr, $92/mo, $773/yr\n   🇧🇷 BRL: R$0.2/min, R$12/hr, R$460/mo, R$3864/yr\n---"
       }
     ]
+  }
+}
+```
+
+### 3. `get_plan` - Get Plan by ID
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 17,
+  "method": "tools/call",
+  "params": {
+    "name": "get_plan",
+    "arguments": { "planId": "plan_2X6KG5mA5yPBM" }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 17,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "🧭 Plan c2.small.x86 (c2-small-x86)\nID: plan_2X6KG5mA5yPBM\nFeatures: ssh, user_data\nCPU: 1x E-2234 (4 cores @ 3.6GHz)\nMemory: 32GB\nDrives: 1x 500 GB SSD\nNICs: 1x 1 Gbps\nRegions:\n  - 🟢 Brazil\n     📍 In stock: SAO, SAO2\n     💵 USD: $0.18/hr, $92/mo, $773/yr\n     🇧🇷 BRL: R$0.9/hr, R$460/mo, R$3864/yr\n  - 🟡 United States\n     ⏳ Available: DAL, LAX, NYC, CHI, ASH, MIA2, LAX2\n     💵 USD: $0.18/hr, $92/mo, $773/yr\n     🇧🇷 BRL: R$0.9/hr, R$460/mo, R$3864/yr"
+      }
+    ]
+  }
+}
+```
+
+### 3. `list_regions` - List Global Regions
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 15,
+  "method": "tools/call",
+  "params": {
+    "name": "list_regions",
+    "arguments": {}
+  }
+}
+```
+
+### 4. `get_region` - Get Region by ID
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 16,
+  "method": "tools/call",
+  "params": {
+    "name": "get_region",
+    "arguments": { "regionId": "loc_bEvjLaBg0oqyx" }
   }
 }
 ```
@@ -613,6 +639,151 @@ node dist/index.js
       {
         "type": "text",
         "text": "✅ Successfully connected to latitude.sh API"
+      }
+    ]
+  }
+}
+```
+
+### 2. `get_server_deploy_config` - Retrieve Deploy Config
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 21,
+  "method": "tools/call",
+  "params": {
+    "name": "get_server_deploy_config",
+    "arguments": { "serverId": "sv_VLMmAD8EOwop2" }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 21,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "🧩 Deploy Config for sv_VLMmAD8EOwop2\nSSH Keys: ssh_6059EqYkOQj8p\nUser Data: ud_zGr47qlMDAg0m\nRAID: raid-1\nOS: rhel8\nHostname: Solarbreeze\niPXE URL: -\nPartitions:\n  1. / - 300GB (ext4)"
+      }
+    ]
+  }
+}
+```
+
+### 3. `update_server_deploy_config` - Update Deploy Config
+
+Updatable fields: hostname, operating_system, raid, user_data (integer or null), ssh_keys (array of integers), partitions (path, size_in_gb, filesystem_type), ipxe_url.
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 22,
+  "method": "tools/call",
+  "params": {
+    "name": "update_server_deploy_config",
+    "arguments": {
+      "serverId": "sv_VLMmAD8EOwop2",
+      "hostname": "Solarbreeze",
+      "operating_system": "rhel8",
+      "raid": "raid-1",
+      "user_data": 12345,
+      "ssh_keys": [123, 456],
+      "partitions": [
+        { "path": "/", "size_in_gb": 300, "filesystem_type": "ext4" }
+      ],
+      "ipxe_url": null
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 22,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "✅ Deploy Config updated for sv_VLMmAD8EOwop2\nSSH Keys: 123, 456\nUser Data: 12345\nRAID: raid-1\nOS: rhel8\nHostname: Solarbreeze\niPXE URL: -\nPartitions:\n  1. / - 300GB (ext4)"
+      }
+    ]
+  }
+}
+```
+
+### 4. `lock_server` - Lock a Server
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 23,
+  "method": "tools/call",
+  "params": {
+    "name": "lock_server",
+    "arguments": { "serverId": "sv_VLMmAD8EOwop2" }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 23,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "🔒 Server locked successfully\n\n🖥️ **Practical Linen Chair** (ID: sv_VLMmAD8EOwop2)\n..."
+      }
+    ]
+  }
+}
+```
+
+### 5. `unlock_server` - Unlock a Server
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 24,
+  "method": "tools/call",
+  "params": {
+    "name": "unlock_server",
+    "arguments": { "serverId": "sv_VLMmAD8EOwop2" }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 24,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "🔓 Server unlocked successfully\n\n🖥️ **Practical Linen Chair** (ID: sv_VLMmAD8EOwop2)\n..."
       }
     ]
   }
@@ -657,7 +828,7 @@ node dist/index.js
     "operating_system": "ubuntu_24_04_x64_lts",
     "hostname": "production-web-01",
     "site": "NYC",
-    "billing_type": "monthly",
+
     "sshKeys": ["ssh_key_production"],
     "tags": ["web", "production", "nginx"],
     "userData": "IyEvYmluL2Jhc2gKYXB0LWdldCB1cGRhdGUgJiYgYXB0LWdldCBpbnN0YWxsIC15IG5naW54",
@@ -712,7 +883,7 @@ if echo "$VALIDATION" | grep -q "✅ Configuration is valid"; then
         "operating_system": "ubuntu_24_04_x64_lts",
         "hostname": "'$HOSTNAME'",
         "site": "'$REGION'",
-        "billing_type": "hourly"
+
       }
     }
   }' | node dist/index.js
@@ -774,7 +945,7 @@ if "✅ Configuration is valid" in validation["result"]["content"][0]["text"]:
         "operating_system": "ubuntu_24_04_x64_lts",
         "hostname": "python-created-server",
         "site": "NYC",
-        "billing_type": "hourly"
+
     })
     print("Server created:", server["result"]["content"][0]["text"])
 else:
@@ -892,7 +1063,7 @@ else:
 curl -H "Authorization: Bearer your-api-key" https://api.latitude.sh/user/profile
 
 # Test MCP server
-echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"test_connection","arguments":{}}}' | node dist/index.js
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"test_connection","arguments":{}}}' | npm run start --silent
 ```
 
 ### Server Creation Failures

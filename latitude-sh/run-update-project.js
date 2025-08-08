@@ -5,11 +5,25 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Project update configuration
-const projectId = "proj_bBmw0KyKv59VR"; // ID del proyecto prueba-09
+// Project update configuration from CLI
+const projectId = process.argv[2];
+const newName = process.argv[3];
+const newDescription = process.argv[4];
+
+if (!projectId) {
+  console.error("❌ Error: Project ID is required");
+  console.log(
+    "Usage: node run-update-project.js <project_id> [new_name] [new_description]"
+  );
+  console.log(
+    "Example: node run-update-project.js proj_AbC123xyz 'ultimate-project' 'Project updated with a new name'"
+  );
+  process.exit(1);
+}
+
 const updateData = {
-  name: "ultimo-project",
-  description: "Proyecto actualizado con nuevo nombre",
+  ...(newName && { name: newName }),
+  ...(newDescription && { description: newDescription }),
 };
 
 console.log(`🔄 Updating project ${projectId}...`);

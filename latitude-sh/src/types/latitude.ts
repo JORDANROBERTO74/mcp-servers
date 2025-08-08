@@ -52,14 +52,6 @@ export interface LatitudeProjectList {
 }
 
 export interface LatitudeProjectDetails extends LatitudeProject {
-  files?: Array<{
-    id: string;
-    name: string;
-    path: string;
-    size: number;
-    type: "file" | "directory";
-    lastModified: string;
-  }>;
   metadata?: {
     tags: string[];
     category: string;
@@ -87,8 +79,7 @@ export interface ProjectSearchParams {
   "page[number]"?: number;
 
   // Basic filters
-  status?: "active" | "inactive" | "archived";
-  owner?: string;
+  // (no undocumented basic filters)
 
   // Advanced filters
   "filter[name]"?: string;
@@ -105,7 +96,6 @@ export interface ProjectSearchParams {
   limit?: number;
   page?: number;
   tags?: string[];
-  query?: string;
 }
 
 // Server Types
@@ -115,12 +105,12 @@ export interface LatitudeServer {
   attributes: {
     tags: string[];
     hostname: string;
-    label: string;
-    price: number;
+    label?: string;
+    price?: number;
     role: string;
     primary_ipv4: string;
     primary_ipv6?: string;
-    status: "on" | "off" | "rebooting" | "provisioning" | "deleted";
+    status: string;
     ipmi_status: string;
     created_at: string;
     scheduled_deletion_at: string | null;
@@ -237,7 +227,7 @@ export interface ServerSearchParams {
   "page[number]"?: number;
 
   // Basic filters
-  status?: "on" | "off" | "rebooting" | "provisioning" | "deleted";
+  status?: string;
   projectId?: string;
 
   // Advanced filters
@@ -295,6 +285,14 @@ export interface LatitudeAPIProjectResponse {
 
 export interface LatitudeAPIProjectsResponse {
   data: LatitudeProject[];
+  meta?: {
+    pagination?: {
+      current_page: number;
+      per_page: number;
+      total_pages: number;
+      total_count: number;
+    };
+  };
 }
 
 export interface LatitudeAPIServerResponse {
@@ -303,6 +301,14 @@ export interface LatitudeAPIServerResponse {
 
 export interface LatitudeAPIServersResponse {
   data: LatitudeServer[];
+  meta?: {
+    pagination?: {
+      current_page: number;
+      per_page: number;
+      total_pages: number;
+      total_count: number;
+    };
+  };
 }
 
 export interface LatitudeAPIParams {
@@ -361,7 +367,13 @@ export interface LatitudePlanSpecs {
     cores: number;
     count: number;
   };
+  vcpu?: {
+    count: number;
+  };
   memory: {
+    total: number;
+  };
+  ephemeral_storage?: {
     total: number;
   };
   drives: Array<{
@@ -373,12 +385,14 @@ export interface LatitudePlanSpecs {
     count: number;
     type: string;
   }>;
-  gpu: Record<string, any>;
+  gpu?: {
+    count?: number;
+    type?: string;
+  };
 }
 
 export interface LatitudePlanRegion {
   name: string;
-  deploys_instantly: string[];
   locations: {
     available: string[];
     in_stock: string[];
@@ -386,14 +400,16 @@ export interface LatitudePlanRegion {
   stock_level: string;
   pricing: {
     USD: {
-      hour: number;
-      month: number;
-      year: number;
+      minute: number | null;
+      hour: number | null;
+      month: number | null;
+      year: number | null;
     };
     BRL: {
-      hour: number;
-      month: number;
-      year: number;
+      minute: number | null;
+      hour: number | null;
+      month: number | null;
+      year: number | null;
     };
   };
 }
@@ -420,4 +436,83 @@ export interface LatitudePlanList {
       total_count: number;
     };
   };
+}
+
+export interface LatitudePlanResponse {
+  data: LatitudePlan;
+}
+
+// Global Regions (List all Regions endpoint)
+export interface GlobalRegionAttributes {
+  name: string;
+  slug: string;
+  facility: string;
+  country: {
+    name: string;
+    slug: string;
+  };
+  type: string;
+}
+
+export interface GlobalRegion {
+  id: string;
+  type: string; // "regions"
+  attributes: GlobalRegionAttributes;
+}
+
+export interface GlobalRegionList {
+  data: GlobalRegion[];
+}
+
+export interface GlobalRegionResponse {
+  data: GlobalRegion;
+  meta?: Record<string, unknown>;
+}
+
+// Note: Global Regions endpoint has a different shape (id/type/attributes{ name, slug, facility, country, type }).
+// If we add a tool for listing global regions, we will add a specific type for that response.
+
+// Server Deploy Config
+export interface DeployConfigPartition {
+  path: string;
+  size_in_gb: number;
+  filesystem_type: string;
+}
+
+export interface DeployConfigAttributes {
+  ssh_keys: string[];
+  user_data: string | null;
+  raid: string | null;
+  operating_system: string | null;
+  hostname: string | null;
+  ipxe_url: string | null;
+  ipxe: string | null;
+  partitions: DeployConfigPartition[];
+}
+
+export interface LatitudeServerDeployConfig {
+  id: string; // server id
+  type: "deploy_config";
+  attributes: DeployConfigAttributes;
+}
+
+export interface LatitudeServerDeployConfigResponse {
+  data: LatitudeServerDeployConfig;
+  meta?: Record<string, unknown>;
+}
+
+export interface UpdateDeployConfigPartition {
+  path: string;
+  size_in_gb: number;
+  filesystem_type: string;
+}
+
+export interface UpdateDeployConfigParams {
+  hostname?: string;
+  operating_system?: string;
+  raid?: string;
+  user_data?: number | null; // API expects integer user_data id
+  ssh_keys?: number[]; // API expects array of integer ssh_key ids
+  partitions?: UpdateDeployConfigPartition[];
+  ipxe_url?: string | null;
 }

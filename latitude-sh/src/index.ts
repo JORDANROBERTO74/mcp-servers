@@ -36,21 +36,6 @@ const ListProjectsArgsSchema = z.object({
     .default(1)
     .describe("Page number to return (starts at 1)"),
 
-  // Basic filters
-  status: z
-    .enum(["active", "inactive", "archived"])
-    .optional()
-    .describe("Filter by project status"),
-  owner: z
-    .string()
-    .min(1)
-    .regex(
-      /^[a-zA-Z0-9._-]+$/,
-      "Owner ID must contain only alphanumeric characters, dots, hyphens, and underscores"
-    )
-    .optional()
-    .describe("Filter by owner ID"),
-
   // Advanced filters
   "filter[name]": z
     .string()
@@ -133,7 +118,11 @@ const GetProjectArgsSchema = z.object({
 });
 
 const SearchProjectsArgsSchema = z.object({
-  query: z.string().min(1).max(200).describe("Search query to find projects"),
+  query: z
+    .string()
+    .min(1)
+    .max(200)
+    .describe("Search query mapped to filter[name]"),
   limit: z
     .number()
     .min(1)
@@ -147,21 +136,6 @@ const SearchProjectsArgsSchema = z.object({
     .optional()
     .default(1)
     .describe("Page number for pagination"),
-  status: z
-    .enum(["active", "inactive", "archived"])
-    .optional()
-    .describe("Filter by project status"),
-});
-
-const GetProjectFilesArgsSchema = z.object({
-  projectId: z
-    .string()
-    .min(1)
-    .regex(
-      /^proj_[a-zA-Z0-9]+$/,
-      "Project ID must be in format 'proj_123456789'"
-    )
-    .describe("The ID of the project to get files for"),
 });
 
 const TestConnectionArgsSchema = z.object({});
@@ -179,6 +153,23 @@ const ValidateServerConfigArgsSchema = z.object({
 
 const GetAvailableRegionsArgsSchema = z.object({
   plan: z.string().min(1).describe("Plan slug to check availability for"),
+});
+
+const ListRegionsArgsSchema = z.object({});
+
+const GetRegionArgsSchema = z.object({
+  regionId: z.string().min(1).describe("Region ID to retrieve (e.g., loc_...)"),
+});
+
+const GetServerDeployConfigArgsSchema = z.object({
+  serverId: z
+    .string()
+    .min(1)
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      "Server ID must contain only letters, numbers, hyphens, and underscores"
+    )
+    .describe("The ID of the server (e.g., sv_...)"),
 });
 
 const CreateProjectArgsSchema = z.object({
@@ -200,7 +191,7 @@ const CreateProjectArgsSchema = z.object({
   provisioning_type: z
     .enum(["on_demand", "reserved"])
     .optional()
-    .default("reserved")
+    .default("on_demand")
     .describe("Provisioning type for the project (OPTIONAL)"),
   billing_type: z
     .enum(["Normal", "Enterprise"])
@@ -285,10 +276,7 @@ const ListServersArgsSchema = z.object({
     .describe("Page number to return (starts at 1)"),
 
   // Basic filters
-  status: z
-    .enum(["on", "off", "rebooting", "provisioning", "deleted"])
-    .optional()
-    .describe("Filter by server status"),
+  status: z.string().min(1).optional().describe("Filter by server status"),
   projectId: z
     .string()
     .min(1)
@@ -505,6 +493,13 @@ const DeleteServerArgsSchema = z.object({
     .max(500)
     .optional()
     .describe("The reason for deleting the server (OPTIONAL)"),
+  confirm: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe(
+      "Confirmation flag to prevent accidental deletion (OPTIONAL, default: false)"
+    ),
 });
 
 // Define ToolInput type locally
@@ -586,45 +581,22 @@ function formatProjectList(
   return `Found ${total} projects (Page ${page} of ${totalPages}):\n\n${projectDetails}`;
 }
 
-// Helper function to format file list
-function formatFileList(files: LatitudeProjectDetails["files"]): string {
-  if (!files || files.length === 0) {
-    return "No files found for this project.";
-  }
-
-  return files
-    .map((file) => {
-      const size = file.size ? ` (${formatSize(file.size)})` : "";
-      const icon = file.type === "directory" ? "📁" : "📄";
-      return `${icon} ${file.name}${size}`;
-    })
-    .join("\n");
-}
-
 // Helper function to validate dates
 function isValidDate(dateString: string): boolean {
   const date = new Date(dateString);
   return date instanceof Date && !isNaN(date.getTime());
 }
 
-// Helper function to format file sizes
-function formatSize(bytes: number): string {
-  if (bytes === 0) return "0 B";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-}
-
 // Helper function to format server information
 function formatServer(server: LatitudeServer | LatitudeServerDetails): string {
   const attrs = server.attributes;
-  const statusEmoji = {
+  const statusEmoji: Record<string, string> = {
     on: "🟢",
     off: "🔴",
     rebooting: "🟡",
     provisioning: "🟡",
     deleted: "🗑️",
+    deploying: "🟡",
   };
 
   return `🖥️ **${attrs.hostname}** (ID: ${server.id})
@@ -714,32 +686,57 @@ try {
           name: "list_projects",
           description:
             "List all projects from your latitude.sh account. " +
-            "You can filter by status, owner, tags, and paginate results. " +
-            "Returns detailed information about each project including name, description, owner, dates, and metadata.",
+            "Supports official filters (name, slug, description, billing_type, environment, tags) and pagination. " +
+            "Returns detailed information about each project including name, description, dates, and metadata.",
           inputSchema: zodToJsonSchema(ListProjectsArgsSchema) as ToolInput,
+        },
+        {
+          name: "lock_server",
+          description:
+            "Lock a server to prevent deletion/modification and actions.",
+          inputSchema: zodToJsonSchema(
+            z.object({
+              serverId: z
+                .string()
+                .min(1)
+                .regex(
+                  /^[a-zA-Z0-9_-]+$/,
+                  "Server ID must contain only letters, numbers, hyphens, and underscores"
+                ),
+            })
+          ) as ToolInput,
+        },
+        {
+          name: "unlock_server",
+          description: "Unlock a previously locked server.",
+          inputSchema: zodToJsonSchema(
+            z.object({
+              serverId: z
+                .string()
+                .min(1)
+                .regex(
+                  /^[a-zA-Z0-9_-]+$/,
+                  "Server ID must contain only letters, numbers, hyphens, and underscores"
+                ),
+            })
+          ) as ToolInput,
         },
         {
           name: "get_project",
           description:
             "Get detailed information about a specific project by its ID. " +
-            "Returns comprehensive project details including files, metadata, collaborators, and settings.",
+            "Returns comprehensive project details including metadata and settings.",
           inputSchema: zodToJsonSchema(GetProjectArgsSchema) as ToolInput,
         },
         {
           name: "search_projects",
           description:
             "Search for projects using a query string. " +
-            "Searches through project names, descriptions, and metadata. " +
-            "Supports filtering by status and pagination.",
+            "Maps query to filter[name] and supports pagination.",
           inputSchema: zodToJsonSchema(SearchProjectsArgsSchema) as ToolInput,
         },
         {
-          name: "get_project_files",
-          description:
-            "Get the file structure of a specific project. " +
-            "Returns a list of files and directories within the project, " +
-            "including file sizes and modification dates.",
-          inputSchema: zodToJsonSchema(GetProjectFilesArgsSchema) as ToolInput,
+          // get_project_files removed
         },
         {
           name: "create_project",
@@ -770,7 +767,7 @@ try {
           name: "list_servers",
           description:
             "List all servers from your latitude.sh account. " +
-            "You can filter by status, project, region, plan, tags, and paginate results. " +
+            "You can filter by status (any string), project, region, plan, tags, and paginate results. " +
             "Returns detailed information about each server including name, status, region, plan, and specs.",
           inputSchema: zodToJsonSchema(ListServersArgsSchema) as ToolInput,
         },
@@ -826,6 +823,74 @@ try {
           inputSchema: zodToJsonSchema(
             GetAvailableRegionsArgsSchema
           ) as ToolInput,
+        },
+        {
+          name: "get_server_deploy_config",
+          description:
+            "Retrieve a server's deploy configuration (ssh_keys, user_data, raid, OS, hostname, ipxe, partitions).",
+          inputSchema: zodToJsonSchema(
+            GetServerDeployConfigArgsSchema
+          ) as ToolInput,
+        },
+        {
+          name: "update_server_deploy_config",
+          description:
+            "Update a server's deploy configuration (hostname, OS, raid, user_data id, ssh_keys ids, partitions, ipxe_url).",
+          inputSchema: zodToJsonSchema(
+            z.object({
+              serverId: z
+                .string()
+                .min(1)
+                .regex(
+                  /^[a-zA-Z0-9_-]+$/,
+                  "Server ID must contain only letters, numbers, hyphens, and underscores"
+                ),
+              hostname: z.string().optional(),
+              operating_system: z.string().optional(),
+              raid: z.string().optional(),
+              user_data: z.number().int().nullable().optional(),
+              ssh_keys: z.array(z.number().int()).optional(),
+              partitions: z
+                .array(
+                  z.object({
+                    path: z.string(),
+                    size_in_gb: z.number().int(),
+                    filesystem_type: z.string(),
+                  })
+                )
+                .optional(),
+              ipxe_url: z.string().url().nullable().optional(),
+            })
+          ) as ToolInput,
+        },
+        {
+          name: "get_plan",
+          description:
+            "Get a specific plan by its ID. Returns slug, name, features, specs and regions with availability/pricing.",
+          inputSchema: zodToJsonSchema(
+            z.object({
+              planId: z
+                .string()
+                .min(1)
+                .regex(
+                  /^plan_[a-zA-Z0-9]+$/,
+                  "Plan ID must be in format 'plan_XXXX'"
+                )
+                .describe("The ID of the plan to retrieve (e.g., plan_...)"),
+            })
+          ) as ToolInput,
+        },
+        {
+          name: "list_regions",
+          description:
+            "List all global regions. Returns name, slug, facility, and country.",
+          inputSchema: zodToJsonSchema(ListRegionsArgsSchema) as ToolInput,
+        },
+        {
+          name: "get_region",
+          description:
+            "Retrieve a specific region by its ID (e.g., loc_...). Returns detailed region information.",
+          inputSchema: zodToJsonSchema(GetRegionArgsSchema) as ToolInput,
         },
         {
           name: "test_connection",
@@ -920,7 +985,6 @@ try {
             {
               limit: parsed.data.limit,
               page: parsed.data.page,
-              status: parsed.data.status,
             }
           );
 
@@ -940,23 +1004,7 @@ try {
           };
         }
 
-        case "get_project_files": {
-          const parsed = GetProjectFilesArgsSchema.safeParse(args);
-          if (!parsed.success) {
-            throw new Error(
-              `Invalid arguments for get_project_files: ${parsed.error}`
-            );
-          }
-
-          const files = await latitudeClient.getProjectFiles(
-            parsed.data.projectId
-          );
-          const formatted = formatFileList(files || []);
-
-          return {
-            content: [{ type: "text", text: formatted }],
-          };
-        }
+        // get_project_files removed
 
         case "create_project": {
           const parsed = CreateProjectArgsSchema.safeParse(args);
@@ -1133,6 +1181,19 @@ try {
             );
           }
 
+          // Require confirmation like delete_project for safety
+          if (!parsed.data.confirm) {
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: "❌ Server deletion cancelled. Please set 'confirm' to true to proceed with deletion.",
+                },
+              ],
+              isError: true,
+            };
+          }
+
           // Delete the server
           await latitudeClient.deleteServer(parsed.data.server_id);
 
@@ -1192,7 +1253,15 @@ try {
             // Add pricing from first available region
             if (plan.attributes.regions.length > 0) {
               const firstRegion = plan.attributes.regions[0];
-              plansText += `   Pricing (USD): $${firstRegion.pricing.USD.hour}/hr, $${firstRegion.pricing.USD.month}/mo\n`;
+              const usd = firstRegion.pricing?.USD;
+              if (usd) {
+                const parts: string[] = [];
+                if (usd.minute != null) parts.push(`$${usd.minute}/min`);
+                if (usd.hour != null) parts.push(`$${usd.hour}/hr`);
+                if (parts.length) {
+                  plansText += `   Pricing (USD): ${parts.join(", ")}\n`;
+                }
+              }
             }
 
             // Add detailed region information
@@ -1229,12 +1298,6 @@ try {
                     )}\n`;
                   }
                 }
-
-                if (region.deploys_instantly.length > 0) {
-                  plansText += `       ⚡ Instant deploy: ${region.deploys_instantly.join(
-                    ", "
-                  )}\n`;
-                }
               });
             }
 
@@ -1248,6 +1311,94 @@ try {
                 text: plansText,
               },
             ],
+          };
+        }
+
+        case "get_plan": {
+          const PlanArgs = z.object({
+            planId: z
+              .string()
+              .min(1)
+              .regex(
+                /^plan_[a-zA-Z0-9]+$/,
+                "Plan ID must be in format 'plan_XXXX'"
+              )
+              .describe("The ID of the plan to retrieve (e.g., plan_...)"),
+          });
+          const parsed = PlanArgs.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(`Invalid arguments for get_plan: ${parsed.error}`);
+          }
+
+          const plan = await latitudeClient.getPlan(parsed.data.planId);
+          const a = plan.attributes;
+          let out = `🧭 Plan ${a.name} (${a.slug})\n`;
+          out += `ID: ${plan.id}\n`;
+          if (a.features?.length) out += `Features: ${a.features.join(", ")}\n`;
+          if (a.specs) {
+            out += `CPU: ${a.specs.cpu.count}x ${a.specs.cpu.type} (${a.specs.cpu.cores} cores @ ${a.specs.cpu.clock}GHz)\n`;
+            out += `Memory: ${a.specs.memory.total}GB\n`;
+            if (a.specs.drives?.length)
+              out += `Drives: ${a.specs.drives
+                .map((d) => `${d.count}x ${d.size} ${d.type}`)
+                .join(", ")}\n`;
+            if (a.specs.nics?.length)
+              out += `NICs: ${a.specs.nics
+                .map((n) => `${n.count}x ${n.type}`)
+                .join(", ")}\n`;
+            if (a.specs.vcpu?.count !== undefined)
+              out += `vCPU: ${a.specs.vcpu.count}\n`;
+            if (a.specs.ephemeral_storage?.total !== undefined)
+              out += `Ephemeral storage: ${a.specs.ephemeral_storage.total}GB\n`;
+            if (a.specs.gpu)
+              out += `GPU: ${a.specs.gpu.type || "N/A"} ${
+                a.specs.gpu.count ? `(${a.specs.gpu.count})` : ""
+              }\n`;
+          }
+          if (a.regions?.length) {
+            out += `Regions:\n`;
+            a.regions.forEach((r) => {
+              const stockIcon =
+                r.stock_level === "high"
+                  ? "🟢"
+                  : r.stock_level === "medium"
+                  ? "🟡"
+                  : r.stock_level === "low"
+                  ? "🟠"
+                  : "🔴";
+              out += `  - ${stockIcon} ${r.name}\n`;
+              if (r.locations?.in_stock?.length)
+                out += `     📍 In stock: ${r.locations.in_stock.join(", ")}\n`;
+              if (r.locations?.available?.length) {
+                const availableOnly = r.locations.available.filter(
+                  (loc) => !r.locations.in_stock.includes(loc)
+                );
+                if (availableOnly.length)
+                  out += `     ⏳ Available: ${availableOnly.join(", ")}\n`;
+              }
+              if (r.pricing?.USD) {
+                const usd = r.pricing.USD;
+                const parts: string[] = [];
+                if (usd.minute != null) parts.push(`$${usd.minute}/min`);
+                if (usd.hour != null) parts.push(`$${usd.hour}/hr`);
+                if (usd.month != null) parts.push(`$${usd.month}/mo`);
+                if (usd.year != null) parts.push(`$${usd.year}/yr`);
+                if (parts.length) out += `     💵 USD: ${parts.join(", ")}\n`;
+              }
+              if (r.pricing?.BRL) {
+                const brl = r.pricing.BRL;
+                const bparts: string[] = [];
+                if (brl.minute != null) bparts.push(`R$${brl.minute}/min`);
+                if (brl.hour != null) bparts.push(`R$${brl.hour}/hr`);
+                if (brl.month != null) bparts.push(`R$${brl.month}/mo`);
+                if (brl.year != null) bparts.push(`R$${brl.year}/yr`);
+                if (bparts.length) out += `     🇧🇷 BRL: ${bparts.join(", ")}\n`;
+              }
+            });
+          }
+
+          return {
+            content: [{ type: "text", text: out }],
           };
         }
 
@@ -1265,10 +1416,52 @@ try {
 
           let regionsText = `🌍 Available Regions for plan ${parsed.data.plan}:\n`;
           regions.forEach((region, index) => {
-            regionsText += `\n${index + 1}. **${region.name}**\n`;
-            regionsText += `   ID: ${region.id}\n`;
-            regionsText += `   Slug: ${region.slug}\n`;
-            regionsText += `   Location: ${region.city}, ${region.country}\n`;
+            const stockIcon =
+              region.stock_level === "high"
+                ? "🟢"
+                : region.stock_level === "medium"
+                ? "🟡"
+                : region.stock_level === "low"
+                ? "🟠"
+                : "🔴";
+
+            regionsText += `\n${index + 1}. ${stockIcon} ${region.name}\n`;
+
+            if (region.locations?.in_stock?.length) {
+              regionsText += `   📍 In stock: ${region.locations.in_stock.join(
+                ", "
+              )}\n`;
+            }
+            if (region.locations?.available?.length) {
+              const availableOnly = region.locations.available.filter(
+                (loc) => !region.locations.in_stock.includes(loc)
+              );
+              if (availableOnly.length) {
+                regionsText += `   ⏳ Available: ${availableOnly.join(", ")}\n`;
+              }
+            }
+            if (region.pricing?.USD) {
+              const usd = region.pricing.USD;
+              const parts: string[] = [];
+              if (usd.minute != null) parts.push(`$${usd.minute}/min`);
+              if (usd.hour != null) parts.push(`$${usd.hour}/hr`);
+              if (usd.month != null) parts.push(`$${usd.month}/mo`);
+              if (usd.year != null) parts.push(`$${usd.year}/yr`);
+              if (parts.length) {
+                regionsText += `   💵 USD: ${parts.join(", ")}\n`;
+              }
+            }
+            if (region.pricing?.BRL) {
+              const brl = region.pricing.BRL;
+              const brlParts: string[] = [];
+              if (brl.minute != null) brlParts.push(`R$${brl.minute}/min`);
+              if (brl.hour != null) brlParts.push(`R$${brl.hour}/hr`);
+              if (brl.month != null) brlParts.push(`R$${brl.month}/mo`);
+              if (brl.year != null) brlParts.push(`R$${brl.year}/yr`);
+              if (brlParts.length) {
+                regionsText += `   🇧🇷 BRL: ${brlParts.join(", ")}\n`;
+              }
+            }
             regionsText += "---\n";
           });
 
@@ -1277,6 +1470,209 @@ try {
               {
                 type: "text",
                 text: regionsText,
+              },
+            ],
+          };
+        }
+
+        case "list_regions": {
+          const parsed = ListRegionsArgsSchema.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for list_regions: ${parsed.error}`
+            );
+          }
+
+          const regions = await latitudeClient.listRegions();
+          let out = "🌐 Regions (global):\n";
+          regions.forEach((r, idx) => {
+            out += `\n${idx + 1}. **${r.attributes.name}** (${
+              r.attributes.slug
+            })\n`;
+            out += `   Facility: ${r.attributes.facility}\n`;
+            out += `   Country: ${r.attributes.country.name} (${r.attributes.country.slug})\n`;
+            out += `   Type: ${r.attributes.type}\n`;
+            out += "---\n";
+          });
+
+          return {
+            content: [{ type: "text", text: out }],
+          };
+        }
+
+        case "get_region": {
+          const parsed = GetRegionArgsSchema.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for get_region: ${parsed.error}`
+            );
+          }
+
+          const region = await latitudeClient.getRegion(parsed.data.regionId);
+          const r = region.attributes;
+          const out =
+            `📍 Region: ${r.name} (${r.slug})\n` +
+            `🏢 Facility: ${r.facility}\n` +
+            `🌎 Country: ${r.country.name} (${r.country.slug})\n` +
+            `🏷️ Type: ${r.type}`;
+
+          return {
+            content: [{ type: "text", text: out }],
+          };
+        }
+
+        case "get_server_deploy_config": {
+          const parsed = GetServerDeployConfigArgsSchema.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for get_server_deploy_config: ${parsed.error}`
+            );
+          }
+
+          const cfg = await latitudeClient.getServerDeployConfig(
+            parsed.data.serverId
+          );
+          const a = cfg.attributes;
+          let out = `🧩 Deploy Config for ${cfg.id}\n`;
+          out += `SSH Keys: ${
+            a.ssh_keys?.length ? a.ssh_keys.join(", ") : "-"
+          }\n`;
+          out += `User Data: ${a.user_data ?? "-"}\n`;
+          out += `RAID: ${a.raid ?? "-"}\n`;
+          out += `OS: ${a.operating_system ?? "-"}\n`;
+          out += `Hostname: ${a.hostname ?? "-"}\n`;
+          out += `iPXE URL: ${a.ipxe_url ?? "-"}\n`;
+          if (a.partitions?.length) {
+            out += `Partitions:\n`;
+            a.partitions.forEach((p, idx) => {
+              out += `  ${idx + 1}. ${p.path} - ${p.size_in_gb}GB (${
+                p.filesystem_type
+              })\n`;
+            });
+          }
+
+          return {
+            content: [{ type: "text", text: out }],
+          };
+        }
+
+        case "update_server_deploy_config": {
+          const UpdateArgs = z.object({
+            serverId: z
+              .string()
+              .min(1)
+              .regex(
+                /^[a-zA-Z0-9_-]+$/,
+                "Server ID must contain only letters, numbers, hyphens, and underscores"
+              ),
+            hostname: z.string().optional(),
+            operating_system: z.string().optional(),
+            raid: z.string().optional(),
+            user_data: z.number().int().nullable().optional(),
+            ssh_keys: z.array(z.number().int()).optional(),
+            partitions: z
+              .array(
+                z.object({
+                  path: z.string(),
+                  size_in_gb: z.number().int(),
+                  filesystem_type: z.string(),
+                })
+              )
+              .optional(),
+            ipxe_url: z.string().url().nullable().optional(),
+          });
+
+          const parsed = UpdateArgs.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for update_server_deploy_config: ${parsed.error}`
+            );
+          }
+
+          const { serverId, ...attrs } = parsed.data as any;
+          const updated = await latitudeClient.updateServerDeployConfig(
+            serverId,
+            attrs
+          );
+          const a = updated.attributes;
+          let out = `✅ Deploy Config updated for ${updated.id}\n`;
+          out += `SSH Keys: ${
+            a.ssh_keys?.length ? a.ssh_keys.join(", ") : "-"
+          }\n`;
+          out += `User Data: ${a.user_data ?? "-"}\n`;
+          out += `RAID: ${a.raid ?? "-"}\n`;
+          out += `OS: ${a.operating_system ?? "-"}\n`;
+          out += `Hostname: ${a.hostname ?? "-"}\n`;
+          out += `iPXE URL: ${a.ipxe_url ?? "-"}\n`;
+          if (a.partitions?.length) {
+            out += `Partitions:\n`;
+            a.partitions.forEach((p, idx) => {
+              out += `  ${idx + 1}. ${p.path} - ${p.size_in_gb}GB (${
+                p.filesystem_type
+              })\n`;
+            });
+          }
+
+          return {
+            content: [{ type: "text", text: out }],
+          };
+        }
+
+        case "lock_server": {
+          const LockArgs = z.object({
+            serverId: z
+              .string()
+              .min(1)
+              .regex(
+                /^[a-zA-Z0-9_-]+$/,
+                "Server ID must contain only letters, numbers, hyphens, and underscores"
+              ),
+          });
+          const parsed = LockArgs.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for lock_server: ${parsed.error}`
+            );
+          }
+
+          const server = await latitudeClient.lockServer(parsed.data.serverId);
+          const formatted = formatServer(server);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `🔒 Server locked successfully\n\n${formatted}`,
+              },
+            ],
+          };
+        }
+
+        case "unlock_server": {
+          const UnlockArgs = z.object({
+            serverId: z
+              .string()
+              .min(1)
+              .regex(
+                /^[a-zA-Z0-9_-]+$/,
+                "Server ID must contain only letters, numbers, hyphens, and underscores"
+              ),
+          });
+          const parsed = UnlockArgs.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for unlock_server: ${parsed.error}`
+            );
+          }
+
+          const server = await latitudeClient.unlockServer(
+            parsed.data.serverId
+          );
+          const formatted = formatServer(server);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `🔓 Server unlocked successfully\n\n${formatted}`,
               },
             ],
           };

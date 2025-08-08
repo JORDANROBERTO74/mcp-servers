@@ -6,21 +6,32 @@ A comprehensive Model Context Protocol (MCP) server that provides intelligent ac
 
 ### 📁 Project Management
 
-- **List Projects**: Get all projects with advanced filtering and pagination
+- **List Projects**: Get all projects with filtering (name, slug, description, billing_type, environment, tags) and pagination
 - **Get Project Details**: Retrieve comprehensive project information
 - **Search Projects**: Search through names, descriptions, and metadata
-- **Get Project Files**: View project file structure
 - **Create Projects**: Create new projects with custom configurations
 - **Update Projects**: Modify existing project settings
 - **Delete Projects**: Remove projects with confirmation protection
+
+### 💰 Plans
+
+- **List Plans**: List all available server plans with specifications and pricing
+- **Get Plan Details**: Get a specific plan by ID with regions and pricing
+
+### 🌍 Region Management
+
+- **List Regions**: List all global regions with facility and country
+- **Get Region Details**: Retrieve detailed information for a specific region by ID
 
 ### 🖥️ Server Management
 
 - **List Servers**: Get all servers with filtering by status, project, region, plan
 - **Create Servers**: Create servers with specifications and configuration
 - **Get Server Details**: Retrieve comprehensive server information
-- **Update Servers**: Modify server properties and configuration
+- **Update Servers**: Modify hostname, billing, tags, and project
 - **Delete Servers**: Remove servers with confirmation protection
+- **Deploy Config**: Get/Update server deploy configuration (OS, RAID, SSH keys, user data, partitions)
+- **Lock/Unlock**: Prevent or allow server modifications and actions
 
 ### 🧠 Smart Server Creation
 
@@ -33,27 +44,34 @@ A comprehensive Model Context Protocol (MCP) server that provides intelligent ac
 
 - **Test Connection**: Verify API connectivity and authentication
 
-## 📋 Complete Tool List (17 Tools)
+## 📋 Complete Tool List (23 Tools)
 
-| Tool                       | Description                   | Status         |
-| -------------------------- | ----------------------------- | -------------- |
-| `list_projects`            | List projects with filtering  | ✅ Implemented |
-| `get_project`              | Get detailed project info     | ✅ Implemented |
-| `search_projects`          | Search projects by query      | ✅ Implemented |
-| `get_project_files`        | Get project file structure    | ✅ Implemented |
-| `create_project`           | Create new project            | ✅ Implemented |
-| `update_project`           | Update existing project       | ✅ Implemented |
-| `delete_project`           | Delete project                | ✅ Implemented |
-| `list_servers`             | List servers with filtering   | ✅ Implemented |
-| `create_server`            | Create new server             | ✅ Implemented |
-| `get_server`               | Get detailed server info      | ✅ Implemented |
-| `update_server`            | Update existing server        | ✅ Implemented |
-| `delete_server`            | Delete server                 | ✅ Implemented |
-| `get_available_plans`      | List all available plans      | ✅ Implemented |
-| `get_available_regions`    | Get regions for specific plan | ✅ Implemented |
-| `get_server_creation_flow` | Smart creation workflow       | ✅ Implemented |
-| `validate_server_config`   | Pre-validate server config    | ✅ Implemented |
-| `test_connection`          | Test API connection           | ✅ Implemented |
+| Tool                          | Description                   | Status         |
+| ----------------------------- | ----------------------------- | -------------- |
+| `list_projects`               | List projects with filtering  | ✅ Implemented |
+| `get_project`                 | Get detailed project info     | ✅ Implemented |
+| `search_projects`             | Search projects by query      | ✅ Implemented |
+| `create_project`              | Create new project            | ✅ Implemented |
+| `update_project`              | Update existing project       | ✅ Implemented |
+| `delete_project`              | Delete project                | ✅ Implemented |
+| `list_servers`                | List servers with filtering   | ✅ Implemented |
+| `create_server`               | Create new server             | ✅ Implemented |
+| `get_server`                  | Get detailed server info      | ✅ Implemented |
+| `update_server`               | Update existing server        | ✅ Implemented |
+| `delete_server`               | Delete server                 | ✅ Implemented |
+| `get_available_plans`         | List all available plans      | ✅ Implemented |
+| `get_plan`                    | Get a specific plan by ID     | ✅ Implemented |
+| `get_available_regions`       | Get regions for specific plan | ✅ Implemented |
+| `list_regions`                | List all global regions       | ✅ Implemented |
+| `get_region`                  | Get a specific global region  | ✅ Implemented |
+| `get_server_creation_flow`    | Smart creation workflow       | ✅ Implemented |
+| `get_server_creation_flow`    | Smart creation workflow       | ✅ Implemented |
+| `validate_server_config`      | Pre-validate server config    | ✅ Implemented |
+| `test_connection`             | Test API connection           | ✅ Implemented |
+| `get_server_deploy_config`    | Get server deploy config      | ✅ Implemented |
+| `update_server_deploy_config` | Update server deploy config   | ✅ Implemented |
+| `lock_server`                 | Lock a server                 | ✅ Implemented |
+| `unlock_server`               | Unlock a server               | ✅ Implemented |
 
 ## 🚀 Smart Server Creation Script
 
@@ -80,7 +98,7 @@ node run-create-server.js
 - Plan selection with real-time specifications and regional availability
 - Comprehensive configuration validation before server creation
 - Optional configurations: SSH keys, tags, user data, startup scripts
-- Multiple billing options: hourly, monthly, yearly
+- Billing can be changed after creation via `update_server` (hourly, monthly, yearly)
 - Detailed server creation confirmation with all specifications
 
 ## 📦 Installation
@@ -116,6 +134,8 @@ Create a `.env.local` file with the following variables:
 
 ```bash
 # Required: Your Latitude.sh API key
+# You may provide either the raw token (recommended) or the full value with "Bearer " prefix.
+# The server will automatically add the prefix if it's missing.
 LATITUDE_API_KEY=your-api-key-here
 
 # Optional: Base URL for the API (default: https://api.latitude.sh)
@@ -171,25 +191,15 @@ npm run start
 
 ```json
 {
-  "page[size]": 20, // Optional: Items per page (1-100)
-  "page[number]": 1, // Optional: Page number
-  "status": "active", // Optional: active, inactive, archived
-  "owner": "user_id", // Optional: Filter by owner
-  "filter[name]": "string", // Optional: Filter by name
-  "filter[slug]": "string", // Optional: Filter by slug
-  "filter[description]": "string", // Optional: Filter by description
-  "filter[billing_type]": "string", // Optional: Filter by billing type
-  "filter[environment]": "string", // Optional: Filter by environment
-  "filter[tags]": "tag1,tag2", // Optional: Filter by tags (comma-separated)
-  "extra_fields[projects]": "stats" // Optional: Include additional fields
-}
-```
-
-#### `get_project_files`
-
-```json
-{
-  "projectId": "proj_123456789" // Required: Project ID
+  "page[size]": 20,
+  "page[number]": 1,
+  "filter[name]": "string",
+  "filter[slug]": "string",
+  "filter[description]": "string",
+  "filter[billing_type]": "string",
+  "filter[environment]": "string",
+  "filter[tags]": "tag_1,tag_2",
+  "extra_fields[projects]": "last_renewal_date,next_renewal_date"
 }
 ```
 
@@ -213,10 +223,11 @@ npm run start
 
 ```json
 {
-  "page[size]": 20, // Optional: Items per page (1-100)
-  "page[number]": 1, // Optional: Page number
-  "status": "on", // Optional: on, off, rebooting, provisioning, deleted
-  "project": "proj_123", // Optional: Filter by project ID
+  "page[size]": 20,
+  "page[number]": 1,
+  "status": "deploying", // Optional: any string status
+  "projectId": "proj_123456789", // Optional: Convenience filter by project ID
+  "filter[project]": "proj_123456789", // Optional: Filter by project ID or slug
   "filter[region]": "NYC", // Optional: Filter by region
   "filter[hostname]": "name", // Optional: Filter by hostname
   "filter[plan]": "c2-small-x86" // Optional: Filter by plan
@@ -232,7 +243,6 @@ npm run start
   "operating_system": "ubuntu_24_04_x64_lts", // Required: OS
   "hostname": "my-server", // Required: Server hostname
   "site": "NYC", // Required: Region code
-  "billing_type": "hourly", // Optional: hourly, monthly, yearly
   "sshKeys": ["ssh_key_123"], // Optional: SSH key IDs
   "tags": ["web", "production"], // Optional: Tags
   "userData": "#!/bin/bash\necho hello", // Optional: User data script
@@ -249,6 +259,16 @@ npm run start
   "billing": "monthly", // Optional: hourly, monthly, yearly
   "tags": ["tag1", "tag2"], // Optional: Array of tag IDs
   "project": "proj_newProject123" // Optional: Move to different project
+}
+```
+
+#### `delete_server`
+
+```json
+{
+  "server_id": "sv_123456789", // Required: Server ID
+  "reason": "Server no longer needed", // Optional: Reason for deletion
+  "confirm": true // Required: Set to true to confirm deletion
 }
 ```
 
@@ -335,22 +355,29 @@ latitude-sh/
 
 The server integrates with the Latitude.sh API using the following key endpoints:
 
-- `GET /projects` - List projects
+- `GET /projects` - List projects (supports filter[name], filter[slug], filter[description], filter[billing_type], filter[environment], filter[tags], extra_fields[projects], page[size], page[number])
 - `POST /projects` - Create project
 - `GET /projects/{id}` - Get project details
-- `PUT /projects/{id}` - Update project
+- `PATCH /projects/{id}` - Update project
 - `DELETE /projects/{id}` - Delete project
 - `GET /servers` - List servers
 - `POST /servers` - Create server
 - `GET /servers/{id}` - Get server details
-- `PUT /servers/{id}` - Update server
+- `PATCH /servers/{id}` - Update server
 - `DELETE /servers/{id}` - Delete server
+- `GET /servers/{id}/deploy_config` - Retrieve deploy configuration
+- `PATCH /servers/{id}/deploy_config` - Update deploy configuration
+- `POST /servers/{id}/lock` - Lock server
+- `POST /servers/{id}/unlock` - Unlock server
 - `GET /plans` - List available plans
+- `GET /plans/{planId}` - Get a specific plan (includes attributes.regions with pricing)
+- `GET /regions` - List global regions
+- `GET /regions/{id}` - Get specific global region
 - `GET /user/profile` - Test connection
 
 ### Authentication
 
-The server uses Bearer token authentication with your Latitude.sh API key.
+The server uses Bearer token authentication with your Latitude.sh API key. You can provide the key with or without the `Bearer ` prefix; the server will normalize it.
 
 ### Rate Limiting
 

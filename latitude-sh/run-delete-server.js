@@ -65,6 +65,7 @@ const deleteServerData = {
     arguments: {
       server_id: serverId,
       reason: reason,
+      confirm: true,
     },
   },
 };

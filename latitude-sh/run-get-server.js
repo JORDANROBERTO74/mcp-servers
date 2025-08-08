@@ -18,7 +18,7 @@ const serverId = process.argv[2];
 if (!serverId) {
   console.log("❌ Error: Server ID is required!");
   console.log("Usage: node run-get-server.js <server_id>");
-  console.log("Example: node run-get-server.js sv_Evkals324");
+  console.log("Example: node run-get-server.js sv_AbC123xyz");
   process.exit(1);
 }
 

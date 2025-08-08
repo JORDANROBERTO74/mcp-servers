@@ -5,10 +5,17 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Project delete configuration
-const projectId = "proj_bBmw0KyKv59VR"; // ID del proyecto ultimo-project
+// Project delete configuration from CLI
+const projectId = process.argv[2];
 
-console.log(`🗑️ Deleting project ${projectId} (ultimo-project)...`);
+if (!projectId) {
+  console.error("❌ Error: Project ID is required");
+  console.log("Usage: node run-delete-project.js <project_id>");
+  console.log("Example: node run-delete-project.js proj_AbC123xyz");
+  process.exit(1);
+}
+
+console.log(`🗑️ Deleting project ${projectId}...`);
 
 // Spawn the MCP server process
 const mcpProcess = spawn("node", ["dist/index.js"], {
