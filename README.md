@@ -31,7 +31,7 @@ mcp-servers/
 - **Location**: `latitude-sh/`
 - **Description**: Comprehensive MCP server for Latitude.sh infrastructure management
 - **Features**:
-  - 19 MCP tools for complete infrastructure control
+  - 23 MCP tools for complete infrastructure control
   - Project management (CRUD operations)
   - Server lifecycle management
   - Smart server creation with validation
@@ -77,3 +77,10 @@ This project is open source and available under the MIT License.
 
 - [MCP Protocol Documentation](https://modelcontextprotocol.io/)
 - [MCP GitHub Repository](https://github.com/modelcontextprotocol)
+
+## Author
+
+- Name: Roberto Jordan
+- Portfolio: [robertojordan.vercel.app](https://robertojordan.vercel.app/)
+- GitHub: [github.com/jordanroberto74](https://github.com/jordanroberto74)
+- Email: jordanroberto74@gmail.com
