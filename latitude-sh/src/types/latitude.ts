@@ -20,6 +20,13 @@ export interface LatitudeProject {
     visibility: "public" | "private";
     allowComments: boolean;
   };
+  metadata?: {
+    tags: string[];
+    category: string;
+    framework?: string;
+    language?: string;
+    provisioning_type?: string;
+  };
 }
 
 export interface LatitudeProjectList {
@@ -43,6 +50,7 @@ export interface LatitudeProjectDetails extends LatitudeProject {
     category: string;
     framework?: string;
     language?: string;
+    provisioning_type?: string;
   };
 }
 
@@ -160,6 +168,7 @@ export interface CreateServerParams {
   projectId: string;
   regionId: string;
   planId: string;
+  operating_system?: string;
   description?: string;
   sshKeys?: string[];
   tags?: string[];
@@ -200,6 +209,11 @@ export interface LatitudeAPIProjectResponse {
 
 export interface LatitudeAPIProjectsResponse {
   data: LatitudeAPIProjectData[];
+  meta?: {
+    total?: number;
+    page?: number;
+    limit?: number;
+  };
 }
 
 export interface LatitudeAPIServerData {
@@ -262,12 +276,43 @@ export interface LatitudeAPIServerData {
   };
 }
 
+export interface LatitudeAPIPlanRegion {
+  locations?: {
+    available?: string[];
+    in_stock?: string[];
+  };
+  pricing?: Record<string, unknown>;
+}
+
+export interface LatitudeAPIPlanData {
+  id: string;
+  type: string;
+  attributes: {
+    name?: string;
+    slug?: string;
+    regions?: LatitudeAPIPlanRegion[];
+  } & Record<string, unknown>;
+}
+
+export interface LatitudeAPIPlanResponse {
+  data: LatitudeAPIPlanData;
+}
+
+export interface LatitudeAPIPlansResponse {
+  data: LatitudeAPIPlanData[];
+}
+
 export interface LatitudeAPIServerResponse {
   data: LatitudeAPIServerData;
 }
 
 export interface LatitudeAPIServersResponse {
   data: LatitudeAPIServerData[];
+  meta?: {
+    total?: number;
+    page?: number;
+    limit?: number;
+  };
 }
 
 export interface LatitudeAPIParams {

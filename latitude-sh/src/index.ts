@@ -10,58 +10,35 @@ import {
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { LatitudeAPIClient } from "./utils/latitude-api.js";
-import type {
-  LatitudeAPIConfig,
-  LatitudeProjectDetails,
-  LatitudeProject,
-  LatitudeServer,
-  LatitudeServerDetails,
-} from "./types/latitude.js";
+import type { LatitudeAPIConfig } from "./types/latitude.js";
 import { getAPIConfig } from "./config.js";
 
 // Schema definitions for tool arguments
 const ListProjectsArgsSchema = z.object({
-  limit: z
-    .number()
-    .min(1)
-    .max(100)
-    .optional()
-    .default(50)
-    .describe("Maximum number of projects to return (1-100)"),
-  page: z
-    .number()
-    .min(1)
-    .optional()
-    .default(1)
-    .describe("Page number for pagination"),
-  status: z
-    .enum(["active", "inactive", "archived"])
-    .optional()
-    .describe("Filter by project status"),
-  owner: z
-    .string()
-    .min(1)
-    .regex(
-      /^[a-zA-Z0-9._-]+$/,
-      "Owner ID must contain only alphanumeric characters, dots, hyphens, and underscores"
-    )
-    .optional()
-    .describe("Filter by owner ID"),
-  tags: z
-    .array(z.string().min(1).max(50))
-    .optional()
-    .describe("Filter by tags"),
+  // Pagination
+  "page[size]": z.number().min(1).max(100).optional().default(20),
+  "page[number]": z.number().min(1).optional().default(1),
+
+  // Advanced filters
+  "filter[name]": z.string().min(1).max(100).optional(),
+  "filter[slug]": z.string().min(1).max(100).optional(),
+  "filter[description]": z.string().min(1).max(500).optional(),
+  "filter[billing_type]": z.string().min(1).max(50).optional(),
+  "filter[environment]": z.string().min(1).max(50).optional(),
+  "filter[tags]": z.string().min(1).max(200).optional(),
+
+  // Extra fields
+  "extra_fields[projects]": z.string().optional(),
+
+  // Legacy support
+  limit: z.number().min(1).max(100).optional(),
+  page: z.number().min(1).optional(),
+  tags: z.array(z.string().min(1).max(50)).optional(),
+  query: z.string().min(1).max(200).optional(),
 });
 
 const GetProjectArgsSchema = z.object({
-  projectId: z
-    .string()
-    .min(1)
-    .regex(
-      /^proj_[a-zA-Z0-9]+$/,
-      "Project ID must be in format 'proj_123456789'"
-    )
-    .describe("The ID of the project to retrieve"),
+  projectId: z.string().min(1).describe("The ID of the project to retrieve"),
 });
 
 const SearchProjectsArgsSchema = z.object({
@@ -85,11 +62,7 @@ const SearchProjectsArgsSchema = z.object({
     .describe("Filter by project status"),
 });
 
-<<<<<<< Updated upstream
-const GetProjectFilesArgsSchema = z.object({
-  projectId: z
-=======
-const TestConnectionArgsSchema = z.object({});
+// const TestConnectionArgsSchema already declared above
 
 const GetAvailablePlansArgsSchema = z.object({});
 
@@ -97,7 +70,7 @@ const GetServerCreationFlowArgsSchema = z.object({});
 
 const ValidateServerConfigArgsSchema = z.object({
   project_id: z.string().describe("Project ID to validate"),
-  plan: z.string().describe("Plan slug to validate"),
+  plan: z.string().min(1).describe("Plan ID (plan_...) to validate"),
   region: z.string().describe("Region code to validate"),
   operating_system: z.string().optional().describe("OS to validate"),
 });
@@ -106,7 +79,7 @@ const GetAvailableRegionsArgsSchema = z.object({
   plan: z
     .string()
     .min(1)
-    .describe("Plan ID (plan_...) or slug to check availability for"),
+    .describe("Plan ID (plan_...) to check availability for"),
   project_id: z
     .string()
     .optional()
@@ -121,17 +94,47 @@ const GetRegionArgsSchema = z.object({
 
 const GetServerDeployConfigArgsSchema = z.object({
   serverId: z
->>>>>>> Stashed changes
     .string()
     .min(1)
-    .regex(
-      /^proj_[a-zA-Z0-9]+$/,
-      "Project ID must be in format 'proj_123456789'"
-    )
-    .describe("The ID of the project to get files for"),
+    .describe("The ID of the server to get deploy configuration for"),
 });
 
 const TestConnectionArgsSchema = z.object({});
+
+// Extra schemas for tools registered in ListTools
+const GetPlanArgsSchema = z.object({
+  planId: z
+    .string()
+    .min(1)
+    .describe("The ID of the plan to retrieve (e.g., plan_...)"),
+});
+
+const UpdateServerDeployConfigArgsSchema = z.object({
+  serverId: z.string().min(1),
+  hostname: z.string().optional(),
+  operating_system: z.string().optional(),
+  raid: z.string().optional(),
+  user_data: z.union([z.string(), z.number()]).nullable().optional(),
+  ssh_keys: z.array(z.union([z.string(), z.number()])).optional(),
+  partitions: z
+    .array(
+      z.object({
+        path: z.string(),
+        size_in_gb: z.number().int(),
+        filesystem_type: z.string(),
+      })
+    )
+    .optional(),
+  ipxe_url: z.string().url().nullable().optional(),
+});
+
+const LockServerArgsSchema = z.object({
+  serverId: z.string().min(1),
+});
+
+const UnlockServerArgsSchema = z.object({
+  serverId: z.string().min(1),
+});
 
 const CreateProjectArgsSchema = z.object({
   name: z
@@ -174,10 +177,6 @@ const UpdateProjectArgsSchema = z.object({
   projectId: z
     .string()
     .min(1)
-    .regex(
-      /^proj_[a-zA-Z0-9]+$/,
-      "Project ID must be in format 'proj_123456789'"
-    )
     .describe("The ID of the project to update (REQUIRED)"),
   name: z
     .string()
@@ -216,10 +215,6 @@ const DeleteProjectArgsSchema = z.object({
   projectId: z
     .string()
     .min(1)
-    .regex(
-      /^proj_[a-zA-Z0-9]+$/,
-      "Project ID must be in format 'proj_123456789'"
-    )
     .describe("The ID of the project to delete (REQUIRED)"),
   confirm: z
     .boolean()
@@ -229,144 +224,73 @@ const DeleteProjectArgsSchema = z.object({
 });
 
 const ListServersArgsSchema = z.object({
-  limit: z
-    .number()
-    .min(1)
-    .max(100)
-    .optional()
-    .default(50)
-    .describe("Maximum number of servers to return (1-100)"),
-  page: z
-    .number()
-    .min(1)
-    .optional()
-    .default(1)
-    .describe("Page number for pagination"),
-  status: z
-    .enum(["running", "stopped", "starting", "stopping", "error", "deleted"])
-    .optional()
-    .describe("Filter by server status"),
-  projectId: z
-    .string()
-    .min(1)
-    .regex(
-      /^proj_[a-zA-Z0-9]+$/,
-      "Project ID must be in format 'proj_123456789'"
-    )
-    .optional()
-    .describe("Filter by project ID"),
-  region: z.string().min(1).optional().describe("Filter by region slug"),
-  plan: z.string().min(1).optional().describe("Filter by plan slug"),
-  tags: z
-    .array(z.string().min(1).max(50))
-    .optional()
-    .describe("Filter by tags"),
+  // Pagination
+  "page[size]": z.number().min(1).max(100).optional().default(20),
+  "page[number]": z.number().min(1).optional().default(1),
+
+  // Basic filters
+  status: z.string().optional(),
+  projectId: z.string().min(1).optional(),
+
+  // Advanced filters
+  "filter[project]": z.string().optional(),
+  "filter[region]": z.string().optional(),
+  "filter[hostname]": z.string().min(1).max(100).optional(),
+  "filter[created_at_gte]": z.string().optional(),
+  "filter[created_at_lte]": z.string().optional(),
+  "filter[label]": z.string().min(1).max(100).optional(),
+  "filter[status]": z.string().min(1).max(50).optional(),
+  "filter[plan]": z.string().min(1).max(100).optional(),
+  "filter[gpu]": z.boolean().optional(),
+  "filter[ram][eql]": z.number().min(1).optional(),
+  "filter[ram][gte]": z.number().min(1).optional(),
+  "filter[ram][lte]": z.number().min(1).optional(),
+  "filter[disk][eql]": z.number().min(1).optional(),
+  "filter[disk][gte]": z.number().min(1).optional(),
+  "filter[disk][lte]": z.number().min(1).optional(),
+  "filter[tags]": z.string().min(1).max(200).optional(),
+
+  // Extra fields
+  "extra_fields[servers]": z.string().optional(),
+
+  // Legacy support
+  limit: z.number().min(1).max(100).optional(),
+  page: z.number().min(1).optional(),
+  region: z.string().optional(),
+  plan: z.string().optional(),
+  tags: z.array(z.string().min(1).max(50)).optional(),
 });
 
 const CreateServerArgsSchema = z.object({
-  name: z
-    .string()
-    .min(1)
-    .max(100)
-    .describe("Name of the server to create (REQUIRED)"),
-  projectId: z
-    .string()
-    .min(1)
-    .regex(
-      /^proj_[a-zA-Z0-9]+$/,
-      "Project ID must be in format 'proj_123456789'"
-    )
-    .describe("The ID of the project to create the server in (REQUIRED)"),
-  regionId: z
-    .string()
-    .min(1)
-    .describe(
-      "The ID of the region where the server will be deployed (REQUIRED)"
-    ),
-  planId: z
-    .string()
-    .min(1)
-    .describe("The ID of the plan/specification for the server (REQUIRED)"),
-  description: z
-    .string()
-    .max(500)
-    .optional()
-    .describe("Description of the server (OPTIONAL)"),
-  sshKeys: z
-    .array(z.string().min(1))
-    .optional()
-    .describe("Array of SSH key IDs to add to the server (OPTIONAL)"),
-  tags: z
-    .array(z.string().min(1).max(50))
-    .optional()
-    .describe("Tags for the server (OPTIONAL)"),
-  userData: z
-    .string()
-    .max(16384)
-    .optional()
-    .describe("User data script to run on server startup (OPTIONAL)"),
-  startupScript: z
-    .string()
-    .max(16384)
-    .optional()
-    .describe("Startup script to run on server initialization (OPTIONAL)"),
+  project: z.string().min(1),
+  plan: z.string().min(1),
+  operating_system: z.string().min(1),
+  hostname: z.string().min(1).max(100),
+  site: z.string().min(1),
+  sshKeys: z.array(z.string().min(1)).optional(),
+  tags: z.array(z.string().min(1).max(50)).optional(),
+  userData: z.string().max(16384).optional(),
+  startupScript: z.string().max(16384).optional(),
 });
 
 const GetServerArgsSchema = z.object({
   serverId: z
     .string()
     .min(1)
-    .regex(
-      /^[a-zA-Z0-9_-]+$/,
-      "Server ID must contain only letters, numbers, hyphens, and underscores"
-    )
     .describe("The ID of the server to retrieve (REQUIRED)"),
 });
 
 const UpdateServerArgsSchema = z.object({
-  serverId: z
-    .string()
-    .min(1)
-    .regex(
-      /^[a-zA-Z0-9_-]+$/,
-      "Server ID must contain only letters, numbers, hyphens, and underscores"
-    )
-    .describe("The ID of the server to update (REQUIRED)"),
-  name: z
-    .string()
-    .min(1)
-    .max(100)
-    .optional()
-    .describe("New name for the server (OPTIONAL)"),
-  description: z
-    .string()
-    .max(500)
-    .optional()
-    .describe("New description for the server (OPTIONAL)"),
-  tags: z
-    .array(z.string().min(1).max(50))
-    .optional()
-    .describe("New tags for the server (OPTIONAL)"),
-  sshKeys: z
-    .array(z.string().min(1))
-    .optional()
-    .describe("New array of SSH key IDs for the server (OPTIONAL)"),
+  serverId: z.string().min(1),
+  hostname: z.string().min(1).max(100).optional(),
+  // Note: billing/project moves are not currently implemented via client; removed from schema to avoid confusion
+  tags: z.array(z.string().min(1)).optional(),
 });
 
 const DeleteServerArgsSchema = z.object({
-  serverId: z
-    .string()
-    .min(1)
-    .regex(
-      /^[a-zA-Z0-9_-]+$/,
-      "Server ID must contain only letters, numbers, hyphens, and underscores"
-    )
-    .describe("The ID of the server to delete (REQUIRED)"),
-  confirm: z
-    .boolean()
-    .describe(
-      "Confirmation flag to prevent accidental deletion. Must be true to proceed (REQUIRED)"
-    ),
+  server_id: z.string().min(1),
+  reason: z.string().max(500).optional(),
+  confirm: z.boolean().optional().default(false),
 });
 
 // Define ToolInput type locally
@@ -377,7 +301,7 @@ type ToolInput = z.infer<typeof ToolInputSchema>;
 const server = new Server(
   {
     name: "latitude-sh-server",
-    version: "0.1.0",
+    version: "0.4.0",
   },
   {
     capabilities: {
@@ -385,170 +309,6 @@ const server = new Server(
     },
   }
 );
-
-// Helper function to format project information
-function formatProject(
-  project: LatitudeProject | LatitudeProjectDetails
-): string {
-  return `📁 **${project.name}** (ID: ${project.id})
-📝 Description: ${project.description || "No description"}
-👤 Owner: ${project.owner.name} (${project.owner.email})
-📅 Created: ${
-    isValidDate(project.createdAt)
-      ? new Date(project.createdAt).toLocaleString()
-      : "Unknown"
-  }
-📅 Updated: ${
-    isValidDate(project.updatedAt)
-      ? new Date(project.updatedAt).toLocaleString()
-      : "Unknown"
-  }
-🏷️ Status: ${project.status}
-${
-  project.collaborators && project.collaborators.length > 0
-    ? `👥 Collaborators: ${project.collaborators.length}`
-    : ""
-}
-${project.settings ? `🔒 Visibility: ${project.settings.visibility}` : ""}
-${
-  "metadata" in project && project.metadata?.tags
-    ? `🏷️ Tags: ${project.metadata.tags.join(", ")}`
-    : ""
-}
-${
-  "metadata" in project && project.metadata?.framework
-    ? `⚙️ Framework: ${project.metadata.framework}`
-    : ""
-}
-${
-  "metadata" in project && project.metadata?.language
-    ? `💻 Language: ${project.metadata.language}`
-    : ""
-}
----`;
-}
-
-// Helper function to format project list
-function formatProjectList(
-  projects: LatitudeProject[],
-  total: number,
-  page: number,
-  limit: number
-): string {
-  if (projects.length === 0) {
-    return "No projects found.";
-  }
-
-  const projectDetails = projects.map(formatProject).join("\n\n");
-  const totalPages = Math.ceil(total / limit);
-
-  return `Found ${total} projects (Page ${page} of ${totalPages}):\n\n${projectDetails}`;
-}
-
-// Helper function to format file list
-function formatFileList(files: LatitudeProjectDetails["files"]): string {
-  if (!files || files.length === 0) {
-    return "No files found for this project.";
-  }
-
-  return files
-    .map((file) => {
-      const size = file.size ? ` (${formatSize(file.size)})` : "";
-      const icon = file.type === "directory" ? "📁" : "📄";
-      return `${icon} ${file.name}${size}`;
-    })
-    .join("\n");
-}
-
-// Helper function to validate dates
-function isValidDate(dateString: string): boolean {
-  const date = new Date(dateString);
-  return date instanceof Date && !isNaN(date.getTime());
-}
-
-// Helper function to format file sizes
-function formatSize(bytes: number): string {
-  if (bytes === 0) return "0 B";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-}
-
-// Helper function to format server information
-function formatServer(server: LatitudeServer | LatitudeServerDetails): string {
-  const statusEmoji = {
-    running: "🟢",
-    stopped: "🔴",
-    starting: "🟡",
-    stopping: "🟡",
-    error: "❌",
-    deleted: "🗑️",
-  };
-
-  return `🖥️ **${server.name}** (ID: ${server.id})
-📝 Description: ${server.description || "No description"}
-🏷️ Status: ${statusEmoji[server.status]} ${server.status}
-🌍 Region: ${server.region.name} (${server.region.slug})
-💻 Plan: ${server.plan.name} - $${server.plan.price} ${server.plan.currency}
-📅 Created: ${
-    isValidDate(server.createdAt)
-      ? new Date(server.createdAt).toLocaleString()
-      : "Unknown"
-  }
-📅 Updated: ${
-    isValidDate(server.updatedAt)
-      ? new Date(server.updatedAt).toLocaleString()
-      : "Unknown"
-  }
-🌐 IP Address: ${server.ipAddress || "Not assigned"}
-🔒 Private IP: ${server.privateIpAddress || "Not assigned"}
-${
-  server.metadata
-    ? `💾 Specs: ${server.metadata.cpu} CPU, ${server.metadata.memory}MB RAM, ${server.metadata.disk}GB Disk`
-    : ""
-}
-${
-  server.tags && server.tags.length > 0
-    ? `🏷️ Tags: ${server.tags.join(", ")}`
-    : ""
-}
-${
-  "specs" in server && server.specs
-    ? `⚙️ Detailed Specs: ${server.specs.cpu} CPU, ${server.specs.memory}MB RAM, ${server.specs.disk}GB Disk, ${server.specs.bandwidth}GB Bandwidth`
-    : ""
-}
-${
-  "network" in server && server.network
-    ? `🌐 Network: Public IP: ${server.network.publicIp}, Private IP: ${
-        server.network.privateIp || "N/A"
-      }`
-    : ""
-}
-${
-  "os" in server && server.os
-    ? `💿 OS: ${server.os.name} ${server.os.version} (${server.os.architecture})`
-    : ""
-}
----`;
-}
-
-// Helper function to format server list
-function formatServerList(
-  servers: LatitudeServer[],
-  total: number,
-  page: number,
-  limit: number
-): string {
-  if (servers.length === 0) {
-    return "No servers found.";
-  }
-
-  const serverDetails = servers.map(formatServer).join("\n\n");
-  const totalPages = Math.ceil(total / limit);
-
-  return `Found ${total} servers (Page ${page} of ${totalPages}):\n\n${serverDetails}`;
-}
 
 // Check if environment variables are loaded
 try {
@@ -583,14 +343,6 @@ try {
             "Searches through project names, descriptions, and metadata. " +
             "Supports filtering by status and pagination.",
           inputSchema: zodToJsonSchema(SearchProjectsArgsSchema) as ToolInput,
-        },
-        {
-          name: "get_project_files",
-          description:
-            "Get the file structure of a specific project. " +
-            "Returns a list of files and directories within the project, " +
-            "including file sizes and modification dates.",
-          inputSchema: zodToJsonSchema(GetProjectFilesArgsSchema) as ToolInput,
         },
         {
           name: "create_project",
@@ -664,6 +416,78 @@ try {
             "Test the connection to the latitude.sh API. " +
             "Verifies that the API key is valid and the server can communicate with latitude.sh.",
           inputSchema: zodToJsonSchema(TestConnectionArgsSchema) as ToolInput,
+        },
+        {
+          name: "get_available_plans",
+          description:
+            "List all available server plans with specifications and pricing.",
+          inputSchema: zodToJsonSchema(
+            GetAvailablePlansArgsSchema
+          ) as ToolInput,
+        },
+        {
+          name: "get_plan",
+          description:
+            "Get a specific plan by ID (includes regions and pricing).",
+          inputSchema: zodToJsonSchema(GetPlanArgsSchema) as ToolInput,
+        },
+        {
+          name: "get_available_regions",
+          description: "Get available regions for a specific plan.",
+          inputSchema: zodToJsonSchema(
+            GetAvailableRegionsArgsSchema
+          ) as ToolInput,
+        },
+        {
+          name: "list_regions",
+          description: "List all global regions.",
+          inputSchema: zodToJsonSchema(ListRegionsArgsSchema) as ToolInput,
+        },
+        {
+          name: "get_region",
+          description: "Get a specific global region by ID.",
+          inputSchema: zodToJsonSchema(GetRegionArgsSchema) as ToolInput,
+        },
+        {
+          name: "get_server_deploy_config",
+          description:
+            "Get server deploy configuration (OS, RAID, SSH keys, user data, partitions).",
+          inputSchema: zodToJsonSchema(
+            GetServerDeployConfigArgsSchema
+          ) as ToolInput,
+        },
+        {
+          name: "update_server_deploy_config",
+          description: "Update server deploy configuration.",
+          inputSchema: zodToJsonSchema(
+            UpdateServerDeployConfigArgsSchema
+          ) as ToolInput,
+        },
+        {
+          name: "lock_server",
+          description: "Lock a server to prevent modifications.",
+          inputSchema: zodToJsonSchema(LockServerArgsSchema) as ToolInput,
+        },
+        {
+          name: "unlock_server",
+          description: "Unlock a server to allow modifications.",
+          inputSchema: zodToJsonSchema(UnlockServerArgsSchema) as ToolInput,
+        },
+        {
+          name: "get_server_creation_flow",
+          description:
+            "Get helper data for server creation (on-demand projects, plans, hints).",
+          inputSchema: zodToJsonSchema(
+            GetServerCreationFlowArgsSchema
+          ) as ToolInput,
+        },
+        {
+          name: "validate_server_config",
+          description:
+            "Validate server configuration (project, plan, region, OS).",
+          inputSchema: zodToJsonSchema(
+            ValidateServerConfigArgsSchema
+          ) as ToolInput,
         },
       ],
     };
@@ -755,24 +579,6 @@ try {
           };
         }
 
-        case "get_project_files": {
-          const parsed = GetProjectFilesArgsSchema.safeParse(args);
-          if (!parsed.success) {
-            throw new Error(
-              `Invalid arguments for get_project_files: ${parsed.error}`
-            );
-          }
-
-          const files = await latitudeClient.getProjectFiles(
-            parsed.data.projectId
-          );
-          const formatted = formatFileList(files || []);
-
-          return {
-            content: [{ type: "text", text: formatted }],
-          };
-        }
-
         case "create_project": {
           const parsed = CreateProjectArgsSchema.safeParse(args);
           if (!parsed.success) {
@@ -851,7 +657,7 @@ try {
             );
           }
 
-          const result = await latitudeClient.getServers(parsed.data);
+          const result = await latitudeClient.getServers(parsed.data as any);
 
           if (!result || !result.servers) {
             throw new Error("Invalid API response: missing servers data");
@@ -881,7 +687,21 @@ try {
             );
           }
 
-          const server = await latitudeClient.createServer(parsed.data);
+          const server = await latitudeClient.createServer({
+            name: parsed.data.hostname,
+            projectId: parsed.data.project,
+            regionId: parsed.data.site,
+            planId: parsed.data.plan,
+            ...(parsed.data.operating_system && {
+              operating_system: parsed.data.operating_system,
+            }),
+            ...(parsed.data.sshKeys && { sshKeys: parsed.data.sshKeys }),
+            ...(parsed.data.tags && { tags: parsed.data.tags }),
+            ...(parsed.data.userData && { userData: parsed.data.userData }),
+            ...(parsed.data.startupScript && {
+              startupScript: parsed.data.startupScript,
+            }),
+          });
           const apiLike = { data: server, meta: {} };
 
           return {
@@ -913,9 +733,18 @@ try {
             );
           }
 
+          const { serverId, hostname, tags } = parsed.data as {
+            serverId: string;
+            hostname?: string;
+            tags?: string[];
+          };
+          const updateAttrs: { name?: string; tags?: string[] } = {};
+          if (hostname) updateAttrs.name = hostname;
+          if (Array.isArray(tags)) updateAttrs.tags = tags;
+
           const server = await latitudeClient.updateServer(
-            parsed.data.serverId,
-            parsed.data
+            serverId,
+            updateAttrs
           );
           const apiLike = { data: server, meta: {} };
 
@@ -943,17 +772,6 @@ try {
             };
           }
 
-<<<<<<< Updated upstream
-          await latitudeClient.deleteServer(parsed.data.serverId);
-
-          return {
-            content: [
-              {
-                type: "text",
-                text: `✅ Server ${parsed.data.serverId} deleted successfully!`,
-              },
-            ],
-=======
           // Delete the server
           await latitudeClient.deleteServer(parsed.data.server_id);
 
@@ -979,7 +797,7 @@ try {
             );
           }
 
-          const plans = await latitudeClient.getAvailablePlans();
+          const plans = await latitudeClient.listPlans();
           const apiLike = { data: plans, meta: { count: plans.length } };
 
           return {
@@ -992,10 +810,6 @@ try {
             planId: z
               .string()
               .min(1)
-              .regex(
-                /^plan_[a-zA-Z0-9]+$/,
-                "Plan ID must be in format 'plan_XXXX'"
-              )
               .describe("The ID of the plan to retrieve (e.g., plan_...)"),
           });
           const parsed = PlanArgs.safeParse(args);
@@ -1095,18 +909,12 @@ try {
 
         case "update_server_deploy_config": {
           const UpdateArgs = z.object({
-            serverId: z
-              .string()
-              .min(1)
-              .regex(
-                /^[a-zA-Z0-9_-]+$/,
-                "Server ID must contain only letters, numbers, hyphens, and underscores"
-              ),
+            serverId: z.string().min(1),
             hostname: z.string().optional(),
             operating_system: z.string().optional(),
             raid: z.string().optional(),
-            user_data: z.number().int().nullable().optional(),
-            ssh_keys: z.array(z.number().int()).optional(),
+            user_data: z.union([z.string(), z.number()]).nullable().optional(),
+            ssh_keys: z.array(z.union([z.string(), z.number()])).optional(),
             partitions: z
               .array(
                 z.object({
@@ -1140,13 +948,7 @@ try {
 
         case "lock_server": {
           const LockArgs = z.object({
-            serverId: z
-              .string()
-              .min(1)
-              .regex(
-                /^[a-zA-Z0-9_-]+$/,
-                "Server ID must contain only letters, numbers, hyphens, and underscores"
-              ),
+            serverId: z.string().min(1),
           });
           const parsed = LockArgs.safeParse(args);
           if (!parsed.success) {
@@ -1164,13 +966,7 @@ try {
 
         case "unlock_server": {
           const UnlockArgs = z.object({
-            serverId: z
-              .string()
-              .min(1)
-              .regex(
-                /^[a-zA-Z0-9_-]+$/,
-                "Server ID must contain only letters, numbers, hyphens, and underscores"
-              ),
+            serverId: z.string().min(1),
           });
           const parsed = UnlockArgs.safeParse(args);
           if (!parsed.success) {
@@ -1185,7 +981,6 @@ try {
           const apiLike = { data: server, meta: { locked: false } };
           return {
             content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
->>>>>>> Stashed changes
           };
         }
 
@@ -1209,8 +1004,6 @@ try {
           };
         }
 
-<<<<<<< Updated upstream
-=======
         case "get_server_creation_flow": {
           const parsed = GetServerCreationFlowArgsSchema.safeParse(args);
           if (!parsed.success) {
@@ -1223,11 +1016,11 @@ try {
           const allProjects = await latitudeClient.getProjects({});
           const onDemandProjects = allProjects.projects.filter(
             (project: any) =>
-              project.attributes.provisioning_type === "on_demand"
+              project.metadata?.provisioning_type === "on_demand"
           );
 
-          // Get available plans
-          const plans = await latitudeClient.getAvailablePlans();
+          // Get available plans (full list)
+          const plans = await latitudeClient.listPlans();
 
           // Popular plan slugs (helper metadata only)
           const popularPlanSlugs = [
@@ -1276,41 +1069,47 @@ try {
             if (!project) {
               issues.push("Project not found");
               isValid = false;
-            } else if (project.attributes.provisioning_type !== "on_demand") {
+            } else if (project.metadata?.provisioning_type !== "on_demand") {
               issues.push("Project is not on-demand");
               isValid = false;
             } else {
               // ok
             }
 
-            // Validate plan
-            const plans = await latitudeClient.getAvailablePlans();
-            const plan = plans.find(
-              (p) => p.attributes.slug === parsed.data.plan
-            );
+            // Validate plan (using getPlan method)
+            let plan = null as unknown as {
+              attributes?: {
+                regions?: Array<{
+                  locations?: { available?: string[]; in_stock?: string[] };
+                }>;
+              };
+            } | null;
+            try {
+              plan = await latitudeClient.getPlan(parsed.data.plan);
+            } catch (error) {
+              // Plan not found or error
+            }
 
             if (!plan) {
               issues.push("Plan not found");
               isValid = false;
-            } else {
-              // ok
             }
 
             // Validate region
-            if (plan) {
+            if (plan && plan.attributes?.regions) {
               const planRegions = plan.attributes.regions;
               const regionAvailable = planRegions.some(
-                (region) =>
-                  region.locations.available.includes(parsed.data.region) ||
-                  region.locations.in_stock.includes(parsed.data.region)
+                (region: any) =>
+                  region.locations?.available?.includes(parsed.data.region) ||
+                  region.locations?.in_stock?.includes(parsed.data.region)
               );
 
               if (!regionAvailable) {
                 issues.push("Region not available for this plan");
                 isValid = false;
               } else {
-                const inStock = planRegions.some((region) =>
-                  region.locations.in_stock.includes(parsed.data.region)
+                const inStock = planRegions.some((region: any) =>
+                  region.locations?.in_stock?.includes(parsed.data.region)
                 );
                 if (!inStock) warnings.push("Region may have limited stock");
               }
@@ -1356,15 +1155,27 @@ try {
           };
         }
 
->>>>>>> Stashed changes
         default:
           throw new Error(`Unknown tool: ${name}`);
       }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
+      let detailed = "";
+      if ((error as any)?.apiErrors) {
+        try {
+          detailed = "\n" + JSON.stringify((error as any).apiErrors, null, 2);
+        } catch {
+          detailed = "\n" + String((error as any).apiErrors);
+        }
+      }
       return {
-        content: [{ type: "text", text: `Error: ${errorMessage}` }],
+        content: [
+          {
+            type: "text",
+            text: `Error: ${errorMessage}${detailed}`,
+          },
+        ],
         isError: true,
       };
     }

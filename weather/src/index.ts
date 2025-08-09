@@ -3,7 +3,8 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 
 const NWS_API_BASE = "https://api.weather.gov";
-const USER_AGENT = "weather-app/1.0";
+// Include contact in User-Agent per NWS API policy
+const USER_AGENT = "weather-app/1.0 (contact: jordanroberto74@gmail.com)";
 
 // Create server instance
 const server = new McpServer({

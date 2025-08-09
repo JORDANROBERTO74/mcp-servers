@@ -30,8 +30,15 @@ The Model Context Protocol (MCP) is a protocol that enables AI assistants to con
 
 ```
 mcp-servers/
+├── latitude-sh/      # Latitude.sh infrastructure MCP server
+│   ├── src/          # TypeScript source code
+│   ├── dist/         # Compiled JavaScript
+│   ├── run-*.js      # 12 utility scripts
+│   ├── README.md     # Server documentation
+│   └── USAGE.md      # Usage guide with examples
 ├── weather/          # Weather data MCP server
-│   ├── src/
+│   ├── src/          # TypeScript source code
+│   ├── build/        # Compiled JavaScript
 │   ├── package.json
 │   └── README.md
 └── README.md         # This file
@@ -39,11 +46,27 @@ mcp-servers/
 
 ## Available Servers
 
+### Latitude.sh Infrastructure Server
+
+- **Location**: `latitude-sh/`
+- **Description**: Comprehensive MCP server for Latitude.sh infrastructure management
+- **Features**:
+  - 23 MCP tools for complete infrastructure control
+  - Project management (CRUD operations)
+  - Server lifecycle management
+  - Smart server creation with validation
+  - Plan and region availability checking
+  - 12 utility scripts for direct CLI usage
+- **Version**: v0.4.0
+- **API Integration**: Latitude.sh REST API
+
 ### Weather Server
 
 - **Location**: `weather/`
 - **Description**: MCP server for retrieving weather information and forecasts
 - **Features**: Real-time weather data, forecasts, and location-based weather services
+- **Version**: v1.0.0
+- **API Integration**: National Weather Service (NWS) API
 
 ## Global Prerequisites
 
@@ -161,3 +184,10 @@ This project is open source and available under the MIT License.
 
 - [MCP Protocol Documentation](https://modelcontextprotocol.io/)
 - [MCP GitHub Repository](https://github.com/modelcontextprotocol)
+
+## Author
+
+- Name: Roberto Jordan
+- Portfolio: [robertojordan.vercel.app](https://robertojordan.vercel.app/)
+- GitHub: [github.com/jordanroberto74](https://github.com/jordanroberto74)
+- Email: jordanroberto74@gmail.com

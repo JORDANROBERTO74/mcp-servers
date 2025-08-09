@@ -1,6 +1,6 @@
 # Weather MCP Server
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/your-username/mcp-servers)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/jordanroberto74/mcp-servers)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-Compatible-blue)](https://modelcontextprotocol.io/)
@@ -111,6 +111,7 @@ This server integrates with the National Weather Service (NWS) API:
 - **Data Format**: GeoJSON
 - **Coverage**: United States only
 - **Rate Limits**: NWS API standard limits apply
+- **User-Agent**: Includes contact info per NWS policy (e.g., `weather-app/1.0 (contact: you@example.com)`).
 
 ## Development
 
@@ -138,13 +139,13 @@ npm run build
 **Production Dependencies:**
 
 - `@modelcontextprotocol/sdk`: MCP server implementation
-- `node-fetch`: HTTP client for API requests
 - `zod`: Schema validation
 
 **Development Dependencies:**
 
 - `@types/node`: TypeScript definitions for Node.js
 - `typescript`: TypeScript compiler
+- `shx`: Cross-platform shell utilities (used for chmod in build)
 
 ## Limitations
 
