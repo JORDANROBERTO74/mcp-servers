@@ -25,7 +25,7 @@ A comprehensive Model Context Protocol (MCP) server that provides intelligent ac
   - [🖥️ Server Management](#-server-management)
   - [🧠 Smart Server Creation](#-smart-server-creation)
   - [🔧 General Tools](#-general-tools)
-- [📋 Complete Tool List](#-complete-tool-list-23-tools)
+- [📋 Complete Tool List](#-complete-tool-list-24-tools)
 - [🚀 Smart Server Creation Script](#-smart-server-creation-script)
 - [📦 Installation](#-installation)
 - [⚙️ Configuration](#️-configuration)
