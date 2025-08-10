@@ -1,24 +1,46 @@
 export interface LatitudeProject {
   id: string;
-  name: string;
-  description?: string;
-  createdAt: string;
-  updatedAt: string;
-  status: "active" | "inactive" | "archived";
-  owner: {
-    id: string;
+  type: string;
+  attributes: {
+    tags: string[];
     name: string;
-    email: string;
-  };
-  collaborators?: Array<{
-    id: string;
-    name: string;
-    email: string;
-    role: "owner" | "admin" | "member";
-  }>;
-  settings?: {
-    visibility: "public" | "private";
-    allowComments: boolean;
+    slug: string;
+    description?: string;
+    billing_type: string;
+    billing_method: string;
+    bandwidth_alert: boolean;
+    environment: string;
+    provisioning_type: string;
+    billing: {
+      subscription_id: string;
+      type: string;
+      method: string;
+    };
+    team: {
+      id: string;
+      name: string;
+      slug: string;
+      description: string | null;
+      address: string | null;
+      currency: {
+        id: string;
+        code: string;
+        name: string;
+      };
+      status: string;
+      feature_flags: string[];
+    };
+    stats: {
+      databases: number;
+      ip_addresses: number;
+      prefixes: number;
+      servers: number;
+      storages: number;
+      virtual_machines: number;
+      vlans: number;
+    };
+    created_at: string;
+    updated_at: string;
   };
   metadata?: {
     tags: string[];
@@ -37,14 +59,6 @@ export interface LatitudeProjectList {
 }
 
 export interface LatitudeProjectDetails extends LatitudeProject {
-  files?: Array<{
-    id: string;
-    name: string;
-    path: string;
-    size: number;
-    type: "file" | "directory";
-    lastModified: string;
-  }>;
   metadata?: {
     tags: string[];
     category: string;
@@ -68,49 +82,133 @@ export interface LatitudeAPIConfig {
 }
 
 export interface ProjectSearchParams {
-  query?: string;
-  status?: "active" | "inactive" | "archived";
-  owner?: string;
-  tags?: string[];
+  // Pagination
+  "page[size]"?: number;
+  "page[number]"?: number;
+
+  // Basic filters
+  // (no undocumented basic filters)
+
+  // Advanced filters
+  "filter[name]"?: string;
+  "filter[slug]"?: string;
+  "filter[description]"?: string;
+  "filter[billing_type]"?: string;
+  "filter[environment]"?: string;
+  "filter[tags]"?: string; // Comma-separated string
+
+  // Extra fields
+  "extra_fields[projects]"?: string; // last_renewal_date,next_renewal_date
+
+  // Legacy support (for backward compatibility)
   limit?: number;
   page?: number;
+  tags?: string[];
 }
 
 // Server Types
 export interface LatitudeServer {
   id: string;
-  name: string;
-  description?: string;
-  createdAt: string;
-  updatedAt: string;
-  status: "running" | "stopped" | "starting" | "stopping" | "error" | "deleted";
-  projectId: string;
-  region: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-  plan: {
-    id: string;
-    name: string;
-    slug: string;
-    price: number;
-    currency: string;
-  };
-  ipAddress?: string;
-  privateIpAddress?: string;
-  sshKeys?: Array<{
-    id: string;
-    name: string;
-    publicKey: string;
-  }>;
-  tags?: string[];
-  metadata?: {
-    os: string;
-    cpu: number;
-    memory: number;
-    disk: number;
-    bandwidth: number;
+  type: string;
+  attributes: {
+    tags: string[];
+    hostname: string;
+    label?: string;
+    price?: number;
+    role: string;
+    primary_ipv4: string;
+    primary_ipv6?: string;
+    status: string;
+    ipmi_status: string;
+    created_at: string;
+    scheduled_deletion_at: string | null;
+    locked: boolean;
+    rescue_allowed: boolean;
+    region: {
+      city: string;
+      country: string;
+      site: {
+        id: string;
+        name: string;
+        slug: string;
+        facility: string;
+        rack_id: string;
+      };
+    };
+    team: {
+      id: string;
+      name: string;
+      slug: string;
+      description: string | null;
+      address: string | null;
+      currency: {
+        id: string;
+        code: string;
+        name: string;
+      };
+      status: string;
+      feature_flags: string[];
+    };
+    project: {
+      id: string;
+      name: string;
+      slug: string;
+      description: string | null;
+      provisioning_type: string;
+      billing_type: string;
+      billing_method: string;
+      bandwidth_alert: boolean;
+      environment: string | null;
+      billing: {
+        subscription_id: string;
+        type: string;
+        method: string;
+      };
+      stats: {
+        databases: number;
+        ip_addresses: number;
+        prefixes: number;
+        servers: number;
+        storages: number;
+        virtual_machines: number;
+        vlans: number;
+      };
+    };
+    plan: {
+      id: string;
+      name: string;
+      slug: string;
+      billing: string;
+    };
+    interfaces: Array<{
+      role: string;
+      name: string;
+      mac_address: string;
+      description: string;
+    }>;
+    operating_system: {
+      name: string;
+      slug: string;
+      version: string;
+      features: {
+        raid: boolean;
+        rescue: boolean;
+        ssh_keys: boolean;
+        user_data: boolean;
+      };
+      distro: {
+        name: string;
+        slug: string;
+        series: string;
+      };
+    };
+    specs: {
+      cpu: string;
+      disk: string;
+      ram: string;
+      nic: string;
+      gpu: string | null;
+    };
   };
 }
 
@@ -122,49 +220,55 @@ export interface LatitudeServerList {
 }
 
 export interface LatitudeServerDetails extends LatitudeServer {
-  specs?: {
-    cpu: number;
-    memory: number;
-    disk: number;
-    bandwidth: number;
+  // Additional metadata that might be added by the API client
+  metadata?: {
+    tags: string[];
+    category: string;
+    framework?: string;
+    language?: string;
   };
-  network?: {
-    publicIp: string;
-    privateIp?: string;
-    gateway?: string;
-    netmask?: string;
-  };
-  os?: {
-    name: string;
-    version: string;
-    architecture: string;
-  };
-  actions?: Array<{
-    id: string;
-    name: string;
-    status: "pending" | "running" | "completed" | "failed";
-    createdAt: string;
-  }>;
 }
 
 export interface ServerSearchParams {
+  // Pagination
+  "page[size]"?: number;
+  "page[number]"?: number;
+
+  // Basic filters
+  status?: string;
   projectId?: string;
-  status?:
-    | "running"
-    | "stopped"
-    | "starting"
-    | "stopping"
-    | "error"
-    | "deleted";
+
+  // Advanced filters
+  "filter[project]"?: string; // Project ID or Slug
+  "filter[region]"?: string; // Region Slug
+  "filter[hostname]"?: string; // Server hostname
+  "filter[created_at_gte]"?: string; // Created at greater than equal date
+  "filter[created_at_lte]"?: string; // Created at less than equal date
+  "filter[label]"?: string; // Server label
+  "filter[status]"?: string; // Server status
+  "filter[plan]"?: string; // Platform/plan name
+  "filter[gpu]"?: boolean; // Filter by GPU existence
+  "filter[ram][eql]"?: number; // RAM size equals (in GB)
+  "filter[ram][gte]"?: number; // RAM size greater than or equal (in GB)
+  "filter[ram][lte]"?: number; // RAM size less than or equal (in GB)
+  "filter[disk][eql]"?: number; // Disk size equals (in GB)
+  "filter[disk][gte]"?: number; // Disk size greater than or equal (in GB)
+  "filter[disk][lte]"?: number; // Disk size less than or equal (in GB)
+  "filter[tags]"?: string; // Tags IDs separated by comma
+
+  // Extra fields
+  "extra_fields[servers]"?: string; // credentials
+
+  // Legacy support (for backward compatibility)
+  limit?: number;
+  page?: number;
   region?: string;
   plan?: string;
   tags?: string[];
-  limit?: number;
-  page?: number;
 }
 
 export interface CreateServerParams {
-  name: string;
+  hostname: string;
   projectId: string;
   regionId: string;
   planId: string;
@@ -177,35 +281,19 @@ export interface CreateServerParams {
 }
 
 export interface UpdateServerParams {
-  name?: string;
-  description?: string;
+  hostname?: string;
+  billing?: "hourly" | "monthly" | "yearly";
   tags?: string[];
+  project?: string;
 }
 
 // API Response Types for Latitude.sh
-export interface LatitudeAPIProjectData {
-  id: string;
-  type: string;
-  attributes: {
-    name: string;
-    description?: string;
-    created_at: string;
-    updated_at: string;
-    team?: {
-      id: string;
-      name: string;
-    };
-    tags?: string[];
-    environment?: string;
-    provisioning_type?: string;
-    billing_type?: string;
-    billing_method?: string;
-  };
+export interface LatitudeAPIProjectResponse {
+  data: LatitudeProject;
 }
 
-export interface LatitudeAPIProjectResponse {
-  data: LatitudeAPIProjectData;
-}
+// Raw project data returned by API list endpoint (same as LatitudeProject)
+export type LatitudeAPIProjectData = LatitudeProject;
 
 export interface LatitudeAPIProjectsResponse {
   data: LatitudeAPIProjectData[];
@@ -267,12 +355,6 @@ export interface LatitudeAPIServerData {
       gateway?: string;
       netmask?: string;
     };
-    actions?: Array<{
-      id: string;
-      name: string;
-      status: "pending" | "running" | "completed" | "failed";
-      created_at: string;
-    }>;
   };
 }
 
@@ -303,7 +385,7 @@ export interface LatitudeAPIPlansResponse {
 }
 
 export interface LatitudeAPIServerResponse {
-  data: LatitudeAPIServerData;
+  data: LatitudeServer;
 }
 
 export interface LatitudeAPIServersResponse {
@@ -316,13 +398,237 @@ export interface LatitudeAPIServersResponse {
 }
 
 export interface LatitudeAPIParams {
+  // Pagination
   "page[size]"?: number;
   "page[number]"?: number;
+
+  // Basic filters
   status?: string;
   owner?: string;
+
+  // Advanced filters for projects
+  "filter[name]"?: string;
+  "filter[slug]"?: string;
+  "filter[description]"?: string;
+  "filter[billing_type]"?: string;
+  "filter[environment]"?: string;
+  "filter[tags]"?: string;
+
+  // Advanced filters for servers
+  "filter[project]"?: string;
+  "filter[region]"?: string;
+  "filter[hostname]"?: string;
+  "filter[created_at_gte]"?: string;
+  "filter[created_at_lte]"?: string;
+  "filter[label]"?: string;
+  "filter[status]"?: string;
+  "filter[plan]"?: string;
+  "filter[gpu]"?: boolean;
+  "filter[ram][eql]"?: number;
+  "filter[ram][gte]"?: number;
+  "filter[ram][lte]"?: number;
+  "filter[disk][eql]"?: number;
+  "filter[disk][gte]"?: number;
+  "filter[disk][lte]"?: number;
+
+  // Extra fields
+  "extra_fields[projects]"?: string;
+  "extra_fields[servers]"?: string;
+
+  // Legacy support
+  limit?: number;
+  page?: number;
   tags?: string;
   query?: string;
   project_id?: string;
   region?: string;
   plan?: string;
+}
+
+// Plan-related interfaces
+export interface LatitudePlanSpecs {
+  cpu: {
+    type: string;
+    clock: number;
+    cores: number;
+    count: number;
+  };
+  vcpu?: {
+    count: number;
+  };
+  memory: {
+    total: number;
+  };
+  ephemeral_storage?: {
+    total: number;
+  };
+  drives: Array<{
+    count: number;
+    size: string;
+    type: string;
+  }>;
+  nics: Array<{
+    count: number;
+    type: string;
+  }>;
+  gpu?: {
+    count?: number;
+    type?: string;
+  };
+}
+
+export interface LatitudePlanRegion {
+  name: string;
+  locations: {
+    available: string[];
+    in_stock: string[];
+  };
+  stock_level: string;
+  pricing: {
+    USD: {
+      minute: number | null;
+      hour: number | null;
+      month: number | null;
+      year: number | null;
+    };
+    BRL: {
+      minute: number | null;
+      hour: number | null;
+      month: number | null;
+      year: number | null;
+    };
+  };
+}
+
+export interface LatitudePlan {
+  id: string;
+  type: string;
+  attributes: {
+    slug: string;
+    name: string;
+    features: string[];
+    specs: LatitudePlanSpecs;
+    regions: LatitudePlanRegion[];
+  };
+}
+
+export interface LatitudePlanList {
+  data: LatitudePlan[];
+  meta?: {
+    pagination?: {
+      current_page: number;
+      per_page: number;
+      total_pages: number;
+      total_count: number;
+    };
+  };
+}
+
+export interface LatitudePlanResponse {
+  data: LatitudePlan;
+}
+
+// Global Regions (List all Regions endpoint)
+export interface GlobalRegionAttributes {
+  name: string;
+  slug: string;
+  facility: string;
+  country: {
+    name: string;
+    slug: string;
+  };
+  type: string;
+}
+
+export interface GlobalRegion {
+  id: string;
+  type: string; // "regions"
+  attributes: GlobalRegionAttributes;
+}
+
+export interface GlobalRegionList {
+  data: GlobalRegion[];
+}
+
+export interface GlobalRegionResponse {
+  data: GlobalRegion;
+  meta?: Record<string, unknown>;
+}
+
+// Note: Global Regions endpoint has a different shape (id/type/attributes{ name, slug, facility, country, type }).
+// If we add a tool for listing global regions, we will add a specific type for that response.
+
+// Server Deploy Config
+export interface DeployConfigPartition {
+  path: string;
+  size_in_gb: number;
+  filesystem_type: string;
+}
+
+export interface DeployConfigAttributes {
+  ssh_keys: string[];
+  user_data: string | null;
+  raid: string | null;
+  operating_system: string | null;
+  hostname: string | null;
+  ipxe_url: string | null;
+  ipxe: string | null;
+  partitions: DeployConfigPartition[];
+}
+
+export interface LatitudeServerDeployConfig {
+  id: string; // server id
+  type: "deploy_config";
+  attributes: DeployConfigAttributes;
+}
+
+export interface LatitudeServerDeployConfigResponse {
+  data: LatitudeServerDeployConfig;
+  meta?: Record<string, unknown>;
+}
+
+export interface UpdateDeployConfigPartition {
+  path: string;
+  size_in_gb: number;
+  filesystem_type: string;
+}
+
+export interface UpdateDeployConfigParams {
+  hostname?: string;
+  operating_system?: string;
+  raid?: string;
+  user_data?: number | null; // API expects integer user_data id
+  ssh_keys?: number[]; // API expects array of integer ssh_key ids
+  partitions?: UpdateDeployConfigPartition[];
+  ipxe_url?: string | null;
+}
+
+// Operating Systems
+export interface LatitudeOSFeatures {
+  raid: boolean;
+  rescue: boolean;
+  ssh_keys: boolean;
+  user_data?: boolean;
+  accelerate?: boolean;
+}
+
+export interface LatitudeOperatingSystemAttributes {
+  name: string;
+  distro: string;
+  slug: string;
+  version: string;
+  user: string;
+  features: LatitudeOSFeatures;
+  provisionable_on: string[];
+}
+
+export interface LatitudeOperatingSystem {
+  id: string;
+  type: string; // "operating_system"
+  attributes: LatitudeOperatingSystemAttributes;
+}
+
+export interface LatitudeOperatingSystemsResponse {
+  data: LatitudeOperatingSystem[];
+  meta?: Record<string, unknown>;
 }

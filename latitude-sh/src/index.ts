@@ -48,16 +48,20 @@ const SearchProjectsArgsSchema = z.object({
     .min(1)
     .max(100)
     .optional()
-    .default(50)
-    .describe("Maximum number of projects to return (1-100)"),
-  page: z
+    .default(20)
+    .describe("Number of items to return per page (1-100, default: 20)"),
+  "page[number]": z
     .number()
     .min(1)
     .optional()
     .default(1)
-    .describe("Page number for pagination"),
-  status: z
-    .enum(["active", "inactive", "archived"])
+    .describe("Page number to return (starts at 1)"),
+
+  // Advanced filters
+  "filter[name]": z
+    .string()
+    .min(1)
+    .max(100)
     .optional()
     .describe("Filter by project status"),
 });
@@ -73,6 +77,22 @@ const ValidateServerConfigArgsSchema = z.object({
   plan: z.string().min(1).describe("Plan ID (plan_...) to validate"),
   region: z.string().describe("Region code to validate"),
   operating_system: z.string().optional().describe("OS to validate"),
+});
+
+// Operating systems list (supports optional pagination)
+const ListOperatingSystemsArgsSchema = z.object({
+  "page[size]": z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe("Number of items per page (default 20)"),
+  "page[number]": z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe("Page number to return (starts at 1, default 1)"),
 });
 
 const GetAvailableRegionsArgsSchema = z.object({
@@ -114,8 +134,8 @@ const UpdateServerDeployConfigArgsSchema = z.object({
   hostname: z.string().optional(),
   operating_system: z.string().optional(),
   raid: z.string().optional(),
-  user_data: z.union([z.string(), z.number()]).nullable().optional(),
-  ssh_keys: z.array(z.union([z.string(), z.number()])).optional(),
+  user_data: z.number().int().nullable().optional(),
+  ssh_keys: z.array(z.number().int()).optional(),
   partitions: z
     .array(
       z.object({
@@ -193,18 +213,10 @@ const UpdateProjectArgsSchema = z.object({
     .enum(["Development", "Production", "Staging"])
     .optional()
     .describe("New environment type for the project (OPTIONAL)"),
-  provisioning_type: z
-    .enum(["on_demand", "reserved"])
+  bandwidth_alert: z
+    .any()
     .optional()
-    .describe("New provisioning type for the project (OPTIONAL)"),
-  billing_type: z
-    .enum(["Normal", "Enterprise"])
-    .optional()
-    .describe("New billing type for the project (OPTIONAL)"),
-  billing_method: z
-    .enum(["Normal", "Enterprise"])
-    .optional()
-    .describe("New billing method for the project (OPTIONAL)"),
+    .describe("Bandwidth alert settings for the project (OPTIONAL)"),
   tags: z
     .array(z.string().min(1).max(50))
     .optional()
@@ -283,7 +295,8 @@ const GetServerArgsSchema = z.object({
 const UpdateServerArgsSchema = z.object({
   serverId: z.string().min(1),
   hostname: z.string().min(1).max(100).optional(),
-  // Note: billing/project moves are not currently implemented via client; removed from schema to avoid confusion
+  billing: z.enum(["hourly", "monthly", "yearly"]).optional(),
+  project: z.string().min(1).optional(),
   tags: z.array(z.string().min(1)).optional(),
 });
 
@@ -325,23 +338,53 @@ try {
           name: "list_projects",
           description:
             "List all projects from your latitude.sh account. " +
-            "You can filter by status, owner, tags, and paginate results. " +
-            "Returns detailed information about each project including name, description, owner, dates, and metadata.",
+            "Supports official filters (name, slug, description, billing_type, environment, tags) and pagination. " +
+            "Returns detailed information about each project including name, description, dates, and metadata.",
           inputSchema: zodToJsonSchema(ListProjectsArgsSchema) as ToolInput,
+        },
+        {
+          name: "lock_server",
+          description:
+            "Lock a server to prevent deletion/modification and actions.",
+          inputSchema: zodToJsonSchema(
+            z.object({
+              serverId: z
+                .string()
+                .min(1)
+                .regex(
+                  /^[a-zA-Z0-9_-]+$/,
+                  "Server ID must contain only letters, numbers, hyphens, and underscores"
+                ),
+            })
+          ) as ToolInput,
+        },
+        {
+          name: "unlock_server",
+          description: "Unlock a previously locked server.",
+          inputSchema: zodToJsonSchema(
+            z.object({
+              serverId: z
+                .string()
+                .min(1)
+                .regex(
+                  /^[a-zA-Z0-9_-]+$/,
+                  "Server ID must contain only letters, numbers, hyphens, and underscores"
+                ),
+            })
+          ) as ToolInput,
         },
         {
           name: "get_project",
           description:
             "Get detailed information about a specific project by its ID. " +
-            "Returns comprehensive project details including files, metadata, collaborators, and settings.",
+            "Returns comprehensive project details including metadata and settings.",
           inputSchema: zodToJsonSchema(GetProjectArgsSchema) as ToolInput,
         },
         {
           name: "search_projects",
           description:
             "Search for projects using a query string. " +
-            "Searches through project names, descriptions, and metadata. " +
-            "Supports filtering by status and pagination.",
+            "Maps query to filter[name] and supports pagination.",
           inputSchema: zodToJsonSchema(SearchProjectsArgsSchema) as ToolInput,
         },
         {
@@ -373,7 +416,7 @@ try {
           name: "list_servers",
           description:
             "List all servers from your latitude.sh account. " +
-            "You can filter by status, project, region, plan, tags, and paginate results. " +
+            "You can filter by status (any string), project, region, plan, tags, and paginate results. " +
             "Returns detailed information about each server including name, status, region, plan, and specs.",
           inputSchema: zodToJsonSchema(ListServersArgsSchema) as ToolInput,
         },
@@ -411,6 +454,71 @@ try {
           inputSchema: zodToJsonSchema(DeleteServerArgsSchema) as ToolInput,
         },
         {
+          name: "get_available_plans",
+          description:
+            "Get all available server plans from latitude.sh. " +
+            "Returns a list of all plans with their specifications, pricing, and availability. " +
+            "Useful for determining which plans are available before creating a server.",
+          inputSchema: zodToJsonSchema(
+            GetAvailablePlansArgsSchema
+          ) as ToolInput,
+        },
+        {
+          name: "get_available_regions",
+          description:
+            "Get available regions for a specific server plan. " +
+            "Returns a list of regions where the specified plan is available. " +
+            "Useful for determining which regions have stock for a particular plan.",
+          inputSchema: zodToJsonSchema(
+            GetAvailableRegionsArgsSchema
+          ) as ToolInput,
+        },
+        {
+          name: "get_server_deploy_config",
+          description:
+            "Retrieve a server's deploy configuration (ssh_keys, user_data, raid, OS, hostname, ipxe, partitions).",
+          inputSchema: zodToJsonSchema(
+            GetServerDeployConfigArgsSchema
+          ) as ToolInput,
+        },
+        {
+          name: "update_server_deploy_config",
+          description:
+            "Update a server's deploy configuration (hostname, OS, raid, user_data id, ssh_keys ids, partitions, ipxe_url).",
+          inputSchema: zodToJsonSchema(
+            UpdateServerDeployConfigArgsSchema
+          ) as ToolInput,
+        },
+        {
+          name: "get_plan",
+          description:
+            "Get a specific plan by its ID. Returns slug, name, features, specs and regions with availability/pricing.",
+          inputSchema: zodToJsonSchema(
+            z.object({
+              planId: z
+                .string()
+                .min(1)
+                .regex(
+                  /^plan_[a-zA-Z0-9]+$/,
+                  "Plan ID must be in format 'plan_XXXX'"
+                )
+                .describe("The ID of the plan to retrieve (e.g., plan_...)"),
+            })
+          ) as ToolInput,
+        },
+        {
+          name: "list_regions",
+          description:
+            "List all global regions. Returns name, slug, facility, and country.",
+          inputSchema: zodToJsonSchema(ListRegionsArgsSchema) as ToolInput,
+        },
+        {
+          name: "get_region",
+          description:
+            "Retrieve a specific region by its ID (e.g., loc_...). Returns detailed region information.",
+          inputSchema: zodToJsonSchema(GetRegionArgsSchema) as ToolInput,
+        },
+        {
           name: "test_connection",
           description:
             "Test the connection to the latitude.sh API. " +
@@ -418,65 +526,17 @@ try {
           inputSchema: zodToJsonSchema(TestConnectionArgsSchema) as ToolInput,
         },
         {
-          name: "get_available_plans",
+          name: "list_operating_systems",
           description:
-            "List all available server plans with specifications and pricing.",
+            "List all operating systems available for server deployment.",
           inputSchema: zodToJsonSchema(
-            GetAvailablePlansArgsSchema
+            ListOperatingSystemsArgsSchema
           ) as ToolInput,
-        },
-        {
-          name: "get_plan",
-          description:
-            "Get a specific plan by ID (includes regions and pricing).",
-          inputSchema: zodToJsonSchema(GetPlanArgsSchema) as ToolInput,
-        },
-        {
-          name: "get_available_regions",
-          description: "Get available regions for a specific plan.",
-          inputSchema: zodToJsonSchema(
-            GetAvailableRegionsArgsSchema
-          ) as ToolInput,
-        },
-        {
-          name: "list_regions",
-          description: "List all global regions.",
-          inputSchema: zodToJsonSchema(ListRegionsArgsSchema) as ToolInput,
-        },
-        {
-          name: "get_region",
-          description: "Get a specific global region by ID.",
-          inputSchema: zodToJsonSchema(GetRegionArgsSchema) as ToolInput,
-        },
-        {
-          name: "get_server_deploy_config",
-          description:
-            "Get server deploy configuration (OS, RAID, SSH keys, user data, partitions).",
-          inputSchema: zodToJsonSchema(
-            GetServerDeployConfigArgsSchema
-          ) as ToolInput,
-        },
-        {
-          name: "update_server_deploy_config",
-          description: "Update server deploy configuration.",
-          inputSchema: zodToJsonSchema(
-            UpdateServerDeployConfigArgsSchema
-          ) as ToolInput,
-        },
-        {
-          name: "lock_server",
-          description: "Lock a server to prevent modifications.",
-          inputSchema: zodToJsonSchema(LockServerArgsSchema) as ToolInput,
-        },
-        {
-          name: "unlock_server",
-          description: "Unlock a server to allow modifications.",
-          inputSchema: zodToJsonSchema(UnlockServerArgsSchema) as ToolInput,
         },
         {
           name: "get_server_creation_flow",
           description:
-            "Get helper data for server creation (on-demand projects, plans, hints).",
+            "Retrieve metadata needed for the interactive server creation workflow (on-demand projects, all plans, and popular plan slugs).",
           inputSchema: zodToJsonSchema(
             GetServerCreationFlowArgsSchema
           ) as ToolInput,
@@ -484,7 +544,7 @@ try {
         {
           name: "validate_server_config",
           description:
-            "Validate server configuration (project, plan, region, OS).",
+            "Validate a proposed server configuration (project, plan, region, operating_system) against live Latitude.sh data before creation.",
           inputSchema: zodToJsonSchema(
             ValidateServerConfigArgsSchema
           ) as ToolInput,
@@ -552,13 +612,16 @@ try {
             );
           }
 
+          const searchParams: Record<string, unknown> = {
+            limit: parsed.data.limit,
+          };
+          if (parsed.data["page[number]"] !== undefined) {
+            searchParams["page[number]"] = parsed.data["page[number]"];
+          }
+
           const result = await latitudeClient.searchProjects(
             parsed.data.query,
-            {
-              limit: parsed.data.limit,
-              page: parsed.data.page,
-              status: parsed.data.status,
-            }
+            searchParams as any
           );
 
           if (!result || !result.projects) {
@@ -688,7 +751,7 @@ try {
           }
 
           const server = await latitudeClient.createServer({
-            name: parsed.data.hostname,
+            hostname: parsed.data.hostname,
             projectId: parsed.data.project,
             regionId: parsed.data.site,
             planId: parsed.data.plan,
@@ -733,13 +796,23 @@ try {
             );
           }
 
-          const { serverId, hostname, tags } = parsed.data as {
-            serverId: string;
+          const { serverId, hostname, billing, project, tags } =
+            parsed.data as {
+              serverId: string;
+              hostname?: string;
+              billing?: "hourly" | "monthly" | "yearly";
+              project?: string;
+              tags?: string[];
+            };
+          const updateAttrs: {
             hostname?: string;
+            billing?: "hourly" | "monthly" | "yearly";
+            project?: string;
             tags?: string[];
-          };
-          const updateAttrs: { name?: string; tags?: string[] } = {};
-          if (hostname) updateAttrs.name = hostname;
+          } = {};
+          if (hostname) updateAttrs.hostname = hostname;
+          if (billing) updateAttrs.billing = billing;
+          if (project) updateAttrs.project = project;
           if (Array.isArray(tags)) updateAttrs.tags = tags;
 
           const server = await latitudeClient.updateServer(
@@ -761,14 +834,16 @@ try {
             );
           }
 
+          // Require confirmation like delete_project for safety
           if (!parsed.data.confirm) {
             return {
               content: [
                 {
                   type: "text",
-                  text: "❌ Server deletion cancelled. Set 'confirm' to true to proceed with deletion.",
+                  text: "❌ Server deletion cancelled. Please set 'confirm' to true to proceed with deletion.",
                 },
               ],
+              isError: true,
             };
           }
 
@@ -908,33 +983,27 @@ try {
         }
 
         case "update_server_deploy_config": {
-          const UpdateArgs = z.object({
-            serverId: z.string().min(1),
-            hostname: z.string().optional(),
-            operating_system: z.string().optional(),
-            raid: z.string().optional(),
-            user_data: z.union([z.string(), z.number()]).nullable().optional(),
-            ssh_keys: z.array(z.union([z.string(), z.number()])).optional(),
-            partitions: z
-              .array(
-                z.object({
-                  path: z.string(),
-                  size_in_gb: z.number().int(),
-                  filesystem_type: z.string(),
-                })
-              )
-              .optional(),
-            ipxe_url: z.string().url().nullable().optional(),
-          });
-
-          const parsed = UpdateArgs.safeParse(args);
+          const parsed = UpdateServerDeployConfigArgsSchema.safeParse(args);
           if (!parsed.success) {
             throw new Error(
               `Invalid arguments for update_server_deploy_config: ${parsed.error}`
             );
           }
 
-          const { serverId, ...attrs } = parsed.data as any;
+          const { serverId, ...attrs } = parsed.data as {
+            serverId: string;
+            hostname?: string;
+            operating_system?: string;
+            raid?: string;
+            user_data?: number | null;
+            ssh_keys?: number[];
+            partitions?: Array<{
+              path: string;
+              size_in_gb: number;
+              filesystem_type: string;
+            }>;
+            ipxe_url?: string | null;
+          };
           const updated = await latitudeClient.updateServerDeployConfig(
             serverId,
             attrs
@@ -1001,6 +1070,20 @@ try {
                 text: "✅ Successfully connected to latitude.sh API",
               },
             ],
+          };
+        }
+
+        case "list_operating_systems": {
+          const parsed = ListOperatingSystemsArgsSchema.safeParse(args);
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid arguments for list_operating_systems: ${parsed.error}`
+            );
+          }
+          const osList = await latitudeClient.listOperatingSystems(parsed.data);
+          const apiLike = { data: osList, meta: { total: osList.length } };
+          return {
+            content: [{ type: "text", text: JSON.stringify(apiLike, null, 2) }],
           };
         }
 
@@ -1117,17 +1200,22 @@ try {
 
             // Validate OS
             if (parsed.data.operating_system) {
-              const commonOS = [
-                "ubuntu_24_04_x64_lts",
-                "ubuntu_22_04_x64_lts",
-                "centos_8_x64",
-                "debian_12_x64",
-                "rocky_9_x64",
-              ];
-              if (commonOS.includes(parsed.data.operating_system)) {
-                // ok
-              } else {
-                warnings.push("Uncommon operating system");
+              try {
+                // Fetch the list of operating systems from the API so we don't rely on a hard-coded slug list
+                const osList = await latitudeClient.listOperatingSystems();
+                const osSlugs = osList.map(
+                  (os: any) => os?.attributes?.slug ?? os?.id
+                );
+                if (!osSlugs.includes(parsed.data.operating_system)) {
+                  warnings.push(
+                    "Operating system slug not found in Latitude.sh catalogue"
+                  );
+                }
+              } catch (e) {
+                // If the API call fails, continue without blocking the validation
+                warnings.push(
+                  "Could not verify operating system against Latitude.sh catalogue"
+                );
               }
             }
           } catch (error) {

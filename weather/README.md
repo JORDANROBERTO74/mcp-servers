@@ -1,7 +1,7 @@
 # Weather MCP Server
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/jordanroberto74/mcp-servers)
-[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-Compatible-blue)](https://modelcontextprotocol.io/)
 

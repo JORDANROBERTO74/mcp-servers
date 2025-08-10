@@ -84,33 +84,34 @@ A comprehensive Model Context Protocol (MCP) server that provides intelligent ac
 
 - **Test Connection**: Verify API connectivity and authentication
 
-## 📋 Complete Tool List (23 Tools)
+## 📋 Complete Tool List (24 Tools)
 
-| Tool                          | Description                   | Status                          |
-| ----------------------------- | ----------------------------- | ------------------------------- |
-| `list_projects`               | List projects with filtering  | ✅ Implemented                  |
-| `get_project`                 | Get detailed project info     | ✅ Implemented                  |
-| `search_projects`             | Search projects by query      | ✅ Implemented                  |
-| `create_project`              | Create new project            | ✅ Implemented                  |
-| `update_project`              | Update existing project       | ✅ Implemented                  |
-| `delete_project`              | Delete project                | ✅ Implemented                  |
-| `list_servers`                | List servers with filtering   | ✅ Implemented                  |
-| `create_server`               | Create new server             | ✅ Implemented                  |
-| `get_server`                  | Get detailed server info      | ✅ Implemented                  |
-| `update_server`               | Update existing server        | ✅ Implemented (hostname, tags) |
-| `delete_server`               | Delete server                 | ✅ Implemented                  |
-| `get_available_plans`         | List all available plans      | ✅ Implemented                  |
-| `get_plan`                    | Get a specific plan by ID     | ✅ Implemented                  |
-| `get_available_regions`       | Get regions for specific plan | ✅ Implemented                  |
-| `list_regions`                | List all global regions       | ✅ Implemented                  |
-| `get_region`                  | Get a specific global region  | ✅ Implemented                  |
-| `get_server_creation_flow`    | Smart creation workflow       | ✅ Implemented                  |
-| `validate_server_config`      | Pre-validate server config    | ✅ Implemented                  |
-| `test_connection`             | Test API connection           | ✅ Implemented                  |
-| `get_server_deploy_config`    | Get server deploy config      | ✅ Implemented                  |
-| `update_server_deploy_config` | Update server deploy config   | ✅ Implemented                  |
-| `lock_server`                 | Lock a server                 | ✅ Implemented                  |
-| `unlock_server`               | Unlock a server               | ✅ Implemented                  |
+| Tool                          | Description                      | Status                          |
+| ----------------------------- | -------------------------------- | ------------------------------- |
+| `list_projects`               | List projects with filtering     | ✅ Implemented                  |
+| `get_project`                 | Get detailed project info        | ✅ Implemented                  |
+| `search_projects`             | Search projects by query         | ✅ Implemented                  |
+| `create_project`              | Create new project               | ✅ Implemented                  |
+| `update_project`              | Update existing project          | ✅ Implemented                  |
+| `delete_project`              | Delete project                   | ✅ Implemented                  |
+| `list_servers`                | List servers with filtering      | ✅ Implemented                  |
+| `create_server`               | Create new server                | ✅ Implemented                  |
+| `get_server`                  | Get detailed server info         | ✅ Implemented                  |
+| `update_server`               | Update existing server           | ✅ Implemented (hostname, tags) |
+| `delete_server`               | Delete server                    | ✅ Implemented                  |
+| `get_available_plans`         | List all available plans         | ✅ Implemented                  |
+| `get_plan`                    | Get a specific plan by ID        | ✅ Implemented                  |
+| `get_available_regions`       | Get regions for specific plan    | ✅ Implemented                  |
+| `list_regions`                | List all global regions          | ✅ Implemented                  |
+| `get_region`                  | Get a specific global region     | ✅ Implemented                  |
+| `get_server_creation_flow`    | Smart creation workflow          | ✅ Implemented                  |
+| `validate_server_config`      | Pre-validate server config       | ✅ Implemented                  |
+| `test_connection`             | Test API connection              | ✅ Implemented                  |
+| `get_server_deploy_config`    | Get server deploy config         | ✅ Implemented                  |
+| `update_server_deploy_config` | Update server deploy config      | ✅ Implemented                  |
+| `lock_server`                 | Lock a server                    | ✅ Implemented                  |
+| `unlock_server`               | Unlock a server                  | ✅ Implemented                  |
+| `list_operating_systems`      | List available operating systems | ✅ Implemented                  |
 
 ## 🚀 Smart Server Creation Script
 
@@ -294,6 +295,8 @@ npm run start
 {
   "serverId": "sv_123456789", // Required: Server ID
   "hostname": "new-hostname", // Optional: New hostname
+  "billing": "monthly", // Optional: Billing model (hourly, monthly, yearly)
+  "project": "proj_987654321", // Optional: Move server to another project ID
   "tags": ["tag1", "tag2"] // Optional: Array of tags
 }
 ```
@@ -316,6 +319,17 @@ npm run start
   "plan": "plan_2X6KG5mA5yPBM", // Required: Plan ID
   "region": "NYC", // Required: Region code
   "operating_system": "ubuntu_24_04_x64_lts" // Optional: OS to validate
+}
+```
+
+#### `list_operating_systems`
+
+Returns the catalogue of operating systems available for server deployment. Supports optional pagination.
+
+```json
+{
+  "page[size]": 20,
+  "page[number]": 1
 }
 ```
 

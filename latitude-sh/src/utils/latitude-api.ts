@@ -12,14 +12,16 @@ import type {
   LatitudeAPIProjectsResponse,
   LatitudeAPIProjectResponse,
   LatitudeAPIParams,
-  LatitudeAPIProjectData,
   LatitudeAPIServersResponse,
-  LatitudeAPIServerData,
   LatitudeAPIServerResponse,
-  LatitudeAPIPlansResponse,
-  LatitudeAPIPlanResponse,
+  LatitudePlanRegion,
   LatitudeAPIPlanData,
-  LatitudeAPIPlanRegion,
+  LatitudeAPIPlanResponse,
+  LatitudeAPIPlansResponse,
+  LatitudeServerDeployConfigResponse,
+  LatitudeServerDeployConfig,
+  LatitudeOperatingSystem,
+  LatitudeOperatingSystemsResponse,
 } from "../types/latitude.js";
 
 export class LatitudeAPIClient {
@@ -28,10 +30,9 @@ export class LatitudeAPIClient {
 
   constructor(config: LatitudeAPIConfig) {
     this.apiKey = config.apiKey;
-    const rawApiKey = (this.apiKey || "").trim();
-    const authHeader = rawApiKey.toLowerCase().startsWith("bearer ")
-      ? rawApiKey
-      : `Bearer ${rawApiKey}`;
+    const authHeader = this.apiKey.startsWith("Bearer ")
+      ? this.apiKey
+      : `Bearer ${this.apiKey}`;
     this.client = axios.create({
       baseURL: config.baseURL || "https://api.latitude.sh",
       timeout: config.timeout || 10000,
@@ -39,7 +40,6 @@ export class LatitudeAPIClient {
         Authorization: authHeader,
         "Content-Type": "application/vnd.api+json",
         Accept: "application/vnd.api+json",
-        "User-Agent": "mcp-server-latitude-sh/0.4.0",
       },
     });
 
@@ -60,19 +60,7 @@ export class LatitudeAPIClient {
         } else if (error.response?.status === 403) {
           throwWith("Forbidden: Insufficient permissions");
         } else if (error.response?.status === 404) {
-          const resourceHint = error.config?.url || "resource";
-          // Try to surface API error details when available
-          const details = Array.isArray(error.response?.data?.errors)
-            ? error.response.data.errors
-                .map((e: any) => e?.detail || e?.title)
-                .filter(Boolean)
-                .join("; ")
-            : error.response?.data?.message;
-          throwWith(
-            `Not Found: ${
-              details || `The requested ${resourceHint} was not found`
-            }`
-          );
+          throw new Error("Project not found");
         } else if (
           error.response?.status === 400 ||
           error.response?.status === 422
@@ -87,11 +75,11 @@ export class LatitudeAPIClient {
                   }`
               )
               .join("; ");
-            throwWith(
+            throw new Error(
               `Bad Request (${error.response?.status}): ${errorDetails}`
             );
           } else {
-            throwWith(
+            throw new Error(
               `Bad Request (${error.response?.status}): ${
                 error.response?.data?.message ||
                 error.message ||
@@ -128,74 +116,72 @@ export class LatitudeAPIClient {
       // Transform parameters to match Latitude.sh API format
       const apiParams: Record<string, unknown> = {};
 
-      if (params?.limit) {
+      // Handle new pagination parameters
+      if (params?.["page[size]"]) {
+        apiParams["page[size]"] = params["page[size]"];
+      } else if (params?.limit) {
+        // Legacy support
         apiParams["page[size]"] = params.limit;
       }
 
-      if (params?.page) {
+      if (params?.["page[number]"]) {
+        apiParams["page[number]"] = params["page[number]"];
+      } else if (params?.page) {
+        // Legacy support
         apiParams["page[number]"] = params.page;
       }
 
-      // Legacy/compat mapping (optional)
-      if ((params as any)?.status) apiParams.status = (params as any).status;
-      if ((params as any)?.owner) apiParams.owner = (params as any).owner;
-      if (
-        Array.isArray((params as any)?.tags) &&
-        (params as any).tags.length > 0
-      ) {
-        apiParams["filter[tags]"] = (params as any).tags.join(",");
-      }
-      if ((params as any)?.query) apiParams.query = (params as any).query;
+      // No undocumented basic filters
 
-      // Pass-through any JSON:API filter/extra_fields keys provided by the tool
-      for (const [key, value] of Object.entries(params || {})) {
-        if (/^filter\[.*\]$/.test(key) || /^extra_fields\[.*\]$/.test(key)) {
-          apiParams[key] = value as unknown;
-        }
+      // Handle advanced filters
+      if (params?.["filter[name]"])
+        apiParams["filter[name]"] = params["filter[name]"];
+      if (params?.["filter[slug]"])
+        apiParams["filter[slug]"] = params["filter[slug]"];
+      if (params?.["filter[description]"])
+        apiParams["filter[description]"] = params["filter[description]"];
+      if (params?.["filter[billing_type]"])
+        apiParams["filter[billing_type]"] = params["filter[billing_type]"];
+      if (params?.["filter[environment]"])
+        apiParams["filter[environment]"] = params["filter[environment]"];
+      if (params?.["filter[tags]"])
+        apiParams["filter[tags]"] = params["filter[tags]"];
+
+      // Handle extra fields
+      if (params?.["extra_fields[projects]"])
+        apiParams["extra_fields[projects]"] = params["extra_fields[projects]"];
+
+      // Legacy support for tags array
+      if (params?.tags && params.tags.length > 0) {
+        apiParams["filter[tags]"] = params.tags.join(",");
       }
+
+      // No query passthrough (use filter[name] via searchProjects)
 
       const response: AxiosResponse<LatitudeAPIProjectsResponse> =
         await this.client.get("/projects", { params: apiParams });
 
-      // Latitude.sh API returns data directly, not wrapped in success/error
       if (!response.data.data) {
         throw new Error("Invalid API response: missing data");
       }
 
-      // Transform the response to match our expected format
-      const projects = response.data.data.map(
-        (project: LatitudeAPIProjectData) => ({
-          id: project.id,
-          name: project.attributes.name,
-          description: project.attributes.description,
-          createdAt: project.attributes.created_at,
-          updatedAt: project.attributes.updated_at,
-          status: "active" as const,
-          owner: {
-            id: project.attributes.team?.id || "unknown",
-            name: project.attributes.team?.name || "Unknown",
-            email: "unknown@latitude.sh",
-          },
-          collaborators: [],
-          settings: {
-            visibility: "private" as const,
-            allowComments: false,
-          },
-          metadata: {
-            tags: project.attributes.tags || [],
-            category: "default",
-            framework: project.attributes.environment || undefined,
-            // carry-through provisioning_type so callers can filter without attributes
-            provisioning_type: project.attributes.provisioning_type,
-          } as any,
-        })
-      );
+      // Use the projects directly from the API response
+      const projects = response.data.data;
+      const pagination = (response.data.meta as any)?.pagination;
 
       return {
         projects,
-        total: response.data?.meta?.total ?? projects.length,
-        page: response.data?.meta?.page ?? params?.page ?? 1,
-        limit: response.data?.meta?.limit ?? params?.limit ?? 50,
+        total:
+          pagination?.total_count ??
+          (response.data.meta as any)?.total ??
+          projects.length,
+        page:
+          pagination?.current_page ??
+          params?.["page[number]"] ??
+          params?.page ??
+          1,
+        limit:
+          pagination?.per_page ?? params?.["page[size]"] ?? params?.limit ?? 20,
       };
     } catch (error) {
       throw new Error(
@@ -220,25 +206,9 @@ export class LatitudeAPIClient {
 
       const project = response.data.data;
 
-      // Transform the response to match our expected format
+      // Return the project directly with additional metadata
       const projectDetails: LatitudeProjectDetails = {
-        id: project.id,
-        name: project.attributes.name,
-        description: project.attributes.description,
-        createdAt: project.attributes.created_at,
-        updatedAt: project.attributes.updated_at,
-        status: "active" as const, // Default status since API doesn't provide it
-        owner: {
-          id: project.attributes.team?.id || "unknown",
-          name: project.attributes.team?.name || "Unknown",
-          email: "unknown@latitude.sh",
-        },
-        collaborators: [],
-        settings: {
-          visibility: "private" as const,
-          allowComments: false,
-        },
-        files: [], // Default empty files array
+        ...project,
         metadata: {
           tags: project.attributes.tags || [],
           category: "default",
@@ -264,27 +234,22 @@ export class LatitudeAPIClient {
     query: string,
     params?: Omit<ProjectSearchParams, "query">
   ): Promise<LatitudeProjectList> {
-    return this.getProjects({ ...params, query });
+    // Map 'query' to filter[name]
+    const mapped: ProjectSearchParams = { ...params, ["filter[name]"]: query };
+    return this.getProjects(mapped as any);
   }
 
-  /**
-   * Get projects by status
-   */
-  async getProjectsByStatus(
-    status: "active" | "inactive" | "archived",
-    params?: Omit<ProjectSearchParams, "status">
-  ): Promise<LatitudeProjectList> {
-    return this.getProjects({ ...params, status });
-  }
+  // (Removed) getProjectsByStatus: Not supported by Latitude.sh API
 
   /**
    * Get projects by owner
    */
   async getProjectsByOwner(
-    ownerId: string,
-    params?: Omit<ProjectSearchParams, "owner">
+    _ownerId: string,
+    params?: Omit<ProjectSearchParams, never>
   ): Promise<LatitudeProjectList> {
-    return this.getProjects({ ...params, owner: ownerId });
+    // Not supported by API; fallback to plain list
+    return this.getProjects({ ...params });
   }
 
   /**
@@ -315,13 +280,13 @@ export class LatitudeAPIClient {
           type: "projects",
           attributes: {
             name: projectData.name,
-            provisioning_type: projectData.provisioning_type || "on_demand",
             ...(projectData.description && {
               description: projectData.description,
             }),
             ...(projectData.environment && {
               environment: projectData.environment,
             }),
+            provisioning_type: projectData.provisioning_type ?? "on_demand",
             ...(projectData.billing_type && {
               billing_type: projectData.billing_type,
             }),
@@ -329,7 +294,9 @@ export class LatitudeAPIClient {
               billing_method: projectData.billing_method,
             }),
             ...(projectData.tags &&
-              projectData.tags.length > 0 && { tags: projectData.tags }),
+              projectData.tags.length > 0 && {
+                tags: projectData.tags,
+              }),
           },
         },
       };
@@ -343,25 +310,9 @@ export class LatitudeAPIClient {
 
       const project = response.data.data;
 
-      // Transform the response to match our expected format
+      // Return the project directly with additional metadata
       const projectDetails: LatitudeProjectDetails = {
-        id: project.id,
-        name: project.attributes.name,
-        description: project.attributes.description,
-        createdAt: project.attributes.created_at,
-        updatedAt: project.attributes.updated_at,
-        status: "active" as const,
-        owner: {
-          id: project.attributes.team?.id || "unknown",
-          name: project.attributes.team?.name || "Unknown",
-          email: "unknown@latitude.sh",
-        },
-        collaborators: [],
-        settings: {
-          visibility: "private" as const,
-          allowComments: false,
-        },
-        files: [],
+        ...project,
         metadata: {
           tags: project.attributes.tags || [],
           category: "default",
@@ -389,9 +340,7 @@ export class LatitudeAPIClient {
       name?: string;
       description?: string;
       environment?: string;
-      provisioning_type?: string;
-      billing_type?: string;
-      billing_method?: string;
+      bandwidth_alert?: any;
       tags?: string[];
     }
   ): Promise<LatitudeProjectDetails> {
@@ -408,14 +357,8 @@ export class LatitudeAPIClient {
             ...(projectData.environment && {
               environment: projectData.environment,
             }),
-            ...(projectData.provisioning_type && {
-              provisioning_type: projectData.provisioning_type,
-            }),
-            ...(projectData.billing_type && {
-              billing_type: projectData.billing_type,
-            }),
-            ...(projectData.billing_method && {
-              billing_method: projectData.billing_method,
+            ...(projectData.bandwidth_alert && {
+              bandwidth_alert: projectData.bandwidth_alert,
             }),
             ...(projectData.tags &&
               projectData.tags.length > 0 && { tags: projectData.tags }),
@@ -432,25 +375,9 @@ export class LatitudeAPIClient {
 
       const project = response.data.data;
 
-      // Transform the response to match our expected format
+      // Return the project directly with additional metadata
       const projectDetails: LatitudeProjectDetails = {
-        id: project.id,
-        name: project.attributes.name,
-        description: project.attributes.description,
-        createdAt: project.attributes.created_at,
-        updatedAt: project.attributes.updated_at,
-        status: "active" as const,
-        owner: {
-          id: project.attributes.team?.id || "unknown",
-          name: project.attributes.team?.name || "Unknown",
-          email: "unknown@latitude.sh",
-        },
-        collaborators: [],
-        settings: {
-          visibility: "private" as const,
-          allowComments: false,
-        },
-        files: [],
+        ...project,
         metadata: {
           tags: project.attributes.tags || [],
           category: "default",
@@ -490,24 +417,6 @@ export class LatitudeAPIClient {
   }
 
   /**
-   * Get project files (if available)
-   */
-  async getProjectFiles(
-    projectId: string
-  ): Promise<LatitudeProjectDetails["files"]> {
-    try {
-      const project = await this.getProject(projectId);
-      return project.files || [];
-    } catch (error) {
-      throw new Error(
-        `Failed to fetch project files: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-    }
-  }
-
-  /**
    * Test API connection
    */
   async testConnection(): Promise<void> {
@@ -531,42 +440,79 @@ export class LatitudeAPIClient {
   }
 
   /**
-   * Get all servers for a project
+   * Get all servers for the authenticated user
    */
   async getServers(
     params?: ServerSearchParams & Record<string, unknown>
   ): Promise<LatitudeServerList> {
     try {
-      const apiParams: Record<string, unknown> = {};
+      // Transform parameters to match Latitude.sh API format
+      const apiParams: LatitudeAPIParams = {};
 
-      if (params?.limit) {
+      // Handle new pagination parameters
+      if (params?.["page[size]"]) {
+        apiParams["page[size]"] = params["page[size]"];
+      } else if (params?.limit) {
+        // Legacy support
         apiParams["page[size]"] = params.limit;
       }
 
-      if (params?.page) {
+      if (params?.["page[number]"]) {
+        apiParams["page[number]"] = params["page[number]"];
+      } else if (params?.page) {
+        // Legacy support
         apiParams["page[number]"] = params.page;
       }
 
-      if ((params as any)?.status)
-        apiParams["filter[status]"] = (params as any).status;
-      if ((params as any)?.projectId)
-        apiParams["filter[project]"] = (params as any).projectId;
-      if ((params as any)?.region)
-        apiParams["filter[region]"] = (params as any).region;
-      if ((params as any)?.plan)
-        apiParams["filter[plan]"] = (params as any).plan;
-      if (
-        Array.isArray((params as any)?.tags) &&
-        (params as any).tags.length > 0
-      ) {
-        apiParams["filter[tags]"] = (params as any).tags.join(",");
-      }
+      // Handle basic filters
+      if (params?.status) apiParams.status = params.status;
+      if (params?.projectId) apiParams["filter[project]"] = params.projectId;
 
-      // Pass-through any provided JSON:API filter/extra_fields keys
-      for (const [key, value] of Object.entries(params || {})) {
-        if (/^filter\[.*\]$/.test(key) || /^extra_fields\[.*\]$/.test(key)) {
-          apiParams[key] = value as unknown;
-        }
+      // Handle advanced filters
+      if (params?.["filter[project]"])
+        apiParams["filter[project]"] = params["filter[project]"];
+      if (params?.["filter[region]"])
+        apiParams["filter[region]"] = params["filter[region]"];
+      if (params?.["filter[hostname]"])
+        apiParams["filter[hostname]"] = params["filter[hostname]"];
+      if (params?.["filter[created_at_gte]"])
+        apiParams["filter[created_at_gte]"] = params["filter[created_at_gte]"];
+      if (params?.["filter[created_at_lte]"])
+        apiParams["filter[created_at_lte]"] = params["filter[created_at_lte]"];
+      if (params?.["filter[label]"])
+        apiParams["filter[label]"] = params["filter[label]"];
+      if (params?.["filter[status]"])
+        apiParams["filter[status]"] = params["filter[status]"];
+      if (params?.["filter[plan]"])
+        apiParams["filter[plan]"] = params["filter[plan]"];
+      if (params?.["filter[gpu]"] !== undefined)
+        apiParams["filter[gpu]"] = params["filter[gpu]"];
+      if (params?.["filter[ram][eql]"])
+        apiParams["filter[ram][eql]"] = params["filter[ram][eql]"];
+      if (params?.["filter[ram][gte]"])
+        apiParams["filter[ram][gte]"] = params["filter[ram][gte]"];
+      if (params?.["filter[ram][lte]"])
+        apiParams["filter[ram][lte]"] = params["filter[ram][lte]"];
+      if (params?.["filter[disk][eql]"])
+        apiParams["filter[disk][eql]"] = params["filter[disk][eql]"];
+      if (params?.["filter[disk][gte]"])
+        apiParams["filter[disk][gte]"] = params["filter[disk][gte]"];
+      if (params?.["filter[disk][lte]"])
+        apiParams["filter[disk][lte]"] = params["filter[disk][lte]"];
+      if (params?.["filter[tags]"])
+        apiParams["filter[tags]"] = params["filter[tags]"];
+
+      // Handle extra fields
+      if (params?.["extra_fields[servers]"])
+        apiParams["extra_fields[servers]"] = params["extra_fields[servers]"];
+
+      // Legacy support for region and plan
+      if (params?.region) apiParams["filter[region]"] = params.region;
+      if (params?.plan) apiParams["filter[plan]"] = params.plan;
+
+      // Legacy support for tags array
+      if (params?.tags && params.tags.length > 0) {
+        apiParams["filter[tags]"] = params.tags.join(",");
       }
 
       const response: AxiosResponse<LatitudeAPIServersResponse> =
@@ -576,52 +522,23 @@ export class LatitudeAPIClient {
         throw new Error("Invalid API response: missing data");
       }
 
-      // Transform the response to match our expected format
-      const servers = response.data.data.map(
-        (server: LatitudeAPIServerData) => ({
-          id: server.id,
-          name: server.attributes.name,
-          description: server.attributes.description,
-          createdAt: server.attributes.created_at,
-          updatedAt: server.attributes.updated_at,
-          status: server.attributes.status,
-          projectId: server.attributes.project_id,
-          region: {
-            id: server.attributes.region?.id || "unknown",
-            name: server.attributes.region?.name || "Unknown",
-            slug: server.attributes.region?.slug || "unknown",
-          },
-          plan: {
-            id: server.attributes.plan?.id || "unknown",
-            name: server.attributes.plan?.name || "Unknown",
-            slug: server.attributes.plan?.slug || "unknown",
-            price: server.attributes.plan?.price || 0,
-            currency: server.attributes.plan?.currency || "USD",
-          },
-          ipAddress: server.attributes.ip_address,
-          privateIpAddress: server.attributes.private_ip_address,
-          sshKeys:
-            server.attributes.ssh_keys?.map((key) => ({
-              id: key.id,
-              name: key.name,
-              publicKey: key.public_key,
-            })) || [],
-          tags: server.attributes.tags || [],
-          metadata: {
-            os: server.attributes.os?.name || "Unknown",
-            cpu: server.attributes.specs?.cpu || 0,
-            memory: server.attributes.specs?.memory || 0,
-            disk: server.attributes.specs?.disk || 0,
-            bandwidth: server.attributes.specs?.bandwidth || 0,
-          },
-        })
-      );
+      // Use the servers directly from the API response
+      const servers = response.data.data;
+      const pagination = (response.data.meta as any)?.pagination;
 
       return {
-        servers,
-        total: response.data?.meta?.total ?? servers.length,
-        page: response.data?.meta?.page ?? params?.page ?? 1,
-        limit: response.data?.meta?.limit ?? params?.limit ?? 50,
+        servers: servers as unknown as LatitudeServerDetails[],
+        total:
+          pagination?.total_count ??
+          (response.data.meta as any)?.total ??
+          servers.length,
+        page:
+          pagination?.current_page ??
+          params?.["page[number]"] ??
+          params?.page ??
+          1,
+        limit:
+          pagination?.per_page ?? params?.["page[size]"] ?? params?.limit ?? 20,
       };
     } catch (error) {
       throw new Error(
@@ -646,67 +563,15 @@ export class LatitudeAPIClient {
 
       const server = response.data.data;
 
-      // Transform the response to match our expected format
+      // Return the server directly with additional metadata
       const serverDetails: LatitudeServerDetails = {
-        id: server.id,
-        name: server.attributes.name,
-        description: server.attributes.description,
-        createdAt: server.attributes.created_at,
-        updatedAt: server.attributes.updated_at,
-        status: server.attributes.status,
-        projectId: server.attributes.project_id,
-        region: {
-          id: server.attributes.region?.id || "unknown",
-          name: server.attributes.region?.name || "Unknown",
-          slug: server.attributes.region?.slug || "unknown",
-        },
-        plan: {
-          id: server.attributes.plan?.id || "unknown",
-          name: server.attributes.plan?.name || "Unknown",
-          slug: server.attributes.plan?.slug || "unknown",
-          price: server.attributes.plan?.price || 0,
-          currency: server.attributes.plan?.currency || "USD",
-        },
-        ipAddress: server.attributes.ip_address,
-        privateIpAddress: server.attributes.private_ip_address,
-        sshKeys:
-          server.attributes.ssh_keys?.map((key) => ({
-            id: key.id,
-            name: key.name,
-            publicKey: key.public_key,
-          })) || [],
-        tags: server.attributes.tags || [],
+        ...server,
         metadata: {
-          os: server.attributes.os?.name || "Unknown",
-          cpu: server.attributes.specs?.cpu || 0,
-          memory: server.attributes.specs?.memory || 0,
-          disk: server.attributes.specs?.disk || 0,
-          bandwidth: server.attributes.specs?.bandwidth || 0,
+          tags: server.attributes.tags || [],
+          category: "server",
+          framework: server.attributes.operating_system?.name || undefined,
+          language: undefined,
         },
-        specs: {
-          cpu: server.attributes.specs?.cpu || 0,
-          memory: server.attributes.specs?.memory || 0,
-          disk: server.attributes.specs?.disk || 0,
-          bandwidth: server.attributes.specs?.bandwidth || 0,
-        },
-        network: {
-          publicIp: server.attributes.ip_address || "",
-          privateIp: server.attributes.private_ip_address,
-          gateway: server.attributes.network?.gateway,
-          netmask: server.attributes.network?.netmask,
-        },
-        os: {
-          name: server.attributes.os?.name || "Unknown",
-          version: server.attributes.os?.version || "Unknown",
-          architecture: server.attributes.os?.architecture || "Unknown",
-        },
-        actions:
-          server.attributes.actions?.map((action) => ({
-            id: action.id,
-            name: action.name,
-            status: action.status,
-            createdAt: action.created_at,
-          })) || [],
       };
 
       return serverDetails;
@@ -730,7 +595,7 @@ export class LatitudeAPIClient {
         data: {
           type: "servers",
           attributes: {
-            name: serverData.name,
+            hostname: serverData.hostname,
             project_id: serverData.projectId,
             // Latitude JSON:API commonly uses `site` for region code in creation
             site: serverData.regionId,
@@ -764,67 +629,15 @@ export class LatitudeAPIClient {
 
       const server = response.data.data;
 
-      // Transform the response to match our expected format
+      // Return the server directly with additional metadata
       const serverDetails: LatitudeServerDetails = {
-        id: server.id,
-        name: server.attributes.name,
-        description: server.attributes.description,
-        createdAt: server.attributes.created_at,
-        updatedAt: server.attributes.updated_at,
-        status: server.attributes.status,
-        projectId: server.attributes.project_id,
-        region: {
-          id: server.attributes.region?.id || "unknown",
-          name: server.attributes.region?.name || "Unknown",
-          slug: server.attributes.region?.slug || "unknown",
-        },
-        plan: {
-          id: server.attributes.plan?.id || "unknown",
-          name: server.attributes.plan?.name || "Unknown",
-          slug: server.attributes.plan?.slug || "unknown",
-          price: server.attributes.plan?.price || 0,
-          currency: server.attributes.plan?.currency || "USD",
-        },
-        ipAddress: server.attributes.ip_address,
-        privateIpAddress: server.attributes.private_ip_address,
-        sshKeys:
-          server.attributes.ssh_keys?.map((key) => ({
-            id: key.id,
-            name: key.name,
-            publicKey: key.public_key,
-          })) || [],
-        tags: server.attributes.tags || [],
+        ...server,
         metadata: {
-          os: server.attributes.os?.name || "Unknown",
-          cpu: server.attributes.specs?.cpu || 0,
-          memory: server.attributes.specs?.memory || 0,
-          disk: server.attributes.specs?.disk || 0,
-          bandwidth: server.attributes.specs?.bandwidth || 0,
+          tags: server.attributes.tags || [],
+          category: "server",
+          framework: server.attributes.operating_system?.name || undefined,
+          language: undefined,
         },
-        specs: {
-          cpu: server.attributes.specs?.cpu || 0,
-          memory: server.attributes.specs?.memory || 0,
-          disk: server.attributes.specs?.disk || 0,
-          bandwidth: server.attributes.specs?.bandwidth || 0,
-        },
-        network: {
-          publicIp: server.attributes.ip_address || "",
-          privateIp: server.attributes.private_ip_address,
-          gateway: server.attributes.network?.gateway,
-          netmask: server.attributes.network?.netmask,
-        },
-        os: {
-          name: server.attributes.os?.name || "Unknown",
-          version: server.attributes.os?.version || "Unknown",
-          architecture: server.attributes.os?.architecture || "Unknown",
-        },
-        actions:
-          server.attributes.actions?.map((action) => ({
-            id: action.id,
-            name: action.name,
-            status: action.status,
-            createdAt: action.created_at,
-          })) || [],
       };
 
       return serverDetails;
@@ -850,12 +663,11 @@ export class LatitudeAPIClient {
           type: "servers",
           id: serverId,
           attributes: {
-            ...(serverData.name && { name: serverData.name }),
-            ...(serverData.description && {
-              description: serverData.description,
-            }),
+            ...(serverData.hostname && { hostname: serverData.hostname }),
+            ...(serverData.billing && { billing: serverData.billing }),
             ...(serverData.tags &&
               serverData.tags.length > 0 && { tags: serverData.tags }),
+            ...(serverData.project && { project: serverData.project }),
           },
         },
       };
@@ -869,67 +681,15 @@ export class LatitudeAPIClient {
 
       const server = response.data.data;
 
-      // Transform the response to match our expected format
+      // Return the server directly with additional metadata
       const serverDetails: LatitudeServerDetails = {
-        id: server.id,
-        name: server.attributes.name,
-        description: server.attributes.description,
-        createdAt: server.attributes.created_at,
-        updatedAt: server.attributes.updated_at,
-        status: server.attributes.status,
-        projectId: server.attributes.project_id,
-        region: {
-          id: server.attributes.region?.id || "unknown",
-          name: server.attributes.region?.name || "Unknown",
-          slug: server.attributes.region?.slug || "unknown",
-        },
-        plan: {
-          id: server.attributes.plan?.id || "unknown",
-          name: server.attributes.plan?.name || "Unknown",
-          slug: server.attributes.plan?.slug || "unknown",
-          price: server.attributes.plan?.price || 0,
-          currency: server.attributes.plan?.currency || "USD",
-        },
-        ipAddress: server.attributes.ip_address,
-        privateIpAddress: server.attributes.private_ip_address,
-        sshKeys:
-          server.attributes.ssh_keys?.map((key) => ({
-            id: key.id,
-            name: key.name,
-            publicKey: key.public_key,
-          })) || [],
-        tags: server.attributes.tags || [],
+        ...server,
         metadata: {
-          os: server.attributes.os?.name || "Unknown",
-          cpu: server.attributes.specs?.cpu || 0,
-          memory: server.attributes.specs?.memory || 0,
-          disk: server.attributes.specs?.disk || 0,
-          bandwidth: server.attributes.specs?.bandwidth || 0,
+          tags: server.attributes.tags || [],
+          category: "server",
+          framework: server.attributes.operating_system?.name || undefined,
+          language: undefined,
         },
-        specs: {
-          cpu: server.attributes.specs?.cpu || 0,
-          memory: server.attributes.specs?.memory || 0,
-          disk: server.attributes.specs?.disk || 0,
-          bandwidth: server.attributes.specs?.bandwidth || 0,
-        },
-        network: {
-          publicIp: server.attributes.ip_address || "",
-          privateIp: server.attributes.private_ip_address,
-          gateway: server.attributes.network?.gateway,
-          netmask: server.attributes.network?.netmask,
-        },
-        os: {
-          name: server.attributes.os?.name || "Unknown",
-          version: server.attributes.os?.version || "Unknown",
-          architecture: server.attributes.os?.architecture || "Unknown",
-        },
-        actions:
-          server.attributes.actions?.map((action) => ({
-            id: action.id,
-            name: action.name,
-            status: action.status,
-            createdAt: action.created_at,
-          })) || [],
       };
 
       return serverDetails;
@@ -1007,11 +767,12 @@ export class LatitudeAPIClient {
   async getAvailableRegions(
     planId: string,
     _projectId?: string
-  ): Promise<LatitudeAPIPlanRegion[]> {
+  ): Promise<LatitudePlanRegion[]> {
     try {
       // Use getPlan internally since it works and returns regions
       const plan = await this.getPlan(planId);
-      return plan.attributes?.regions || [];
+      return (plan.attributes?.regions ||
+        []) as unknown as LatitudePlanRegion[];
     } catch (error) {
       throw new Error(
         `Failed to fetch available regions for plan ${planId}: ${
@@ -1056,7 +817,9 @@ export class LatitudeAPIClient {
   /**
    * Retrieve a server deploy config
    */
-  async getServerDeployConfig(serverId: string): Promise<any> {
+  async getServerDeployConfig(
+    serverId: string
+  ): Promise<LatitudeServerDeployConfig> {
     try {
       const response = await this.client.get<any>(
         `/servers/${serverId}/deploy_config`
@@ -1080,8 +843,8 @@ export class LatitudeAPIClient {
       hostname?: string;
       operating_system?: string;
       raid?: string;
-      user_data?: string | null;
-      ssh_keys?: string[];
+      user_data?: number | null;
+      ssh_keys?: number[];
       partitions?: Array<{
         path: string;
         size_in_gb: number;
@@ -1089,7 +852,7 @@ export class LatitudeAPIClient {
       }>;
       ipxe_url?: string | null;
     }
-  ): Promise<LatitudeAPIServerData> {
+  ): Promise<LatitudeServerDeployConfig> {
     try {
       const payload = {
         data: {
@@ -1113,11 +876,12 @@ export class LatitudeAPIClient {
         },
       };
 
-      const response = await this.client.patch<LatitudeAPIServerResponse>(
-        `/servers/${serverId}/deploy_config`,
-        payload
-      );
-      return response.data.data as LatitudeAPIServerData;
+      const response =
+        await this.client.patch<LatitudeServerDeployConfigResponse>(
+          `/servers/${serverId}/deploy_config`,
+          payload
+        );
+      return response.data.data as LatitudeServerDeployConfig;
     } catch (error) {
       throw new Error(
         `Failed to update deploy config for server ${serverId}: ${
@@ -1130,7 +894,7 @@ export class LatitudeAPIClient {
   /**
    * Lock a server (POST /servers/{serverId}/lock)
    */
-  async lockServer(serverId: string): Promise<LatitudeAPIServerData> {
+  async lockServer(serverId: string): Promise<LatitudeServerDetails> {
     try {
       const response = await this.client.post<LatitudeAPIServerResponse>(
         `/servers/${serverId}/lock`,
@@ -1152,7 +916,7 @@ export class LatitudeAPIClient {
   /**
    * Unlock a server (POST /servers/{serverId}/unlock)
    */
-  async unlockServer(serverId: string): Promise<LatitudeAPIServerData> {
+  async unlockServer(serverId: string): Promise<LatitudeServerDetails> {
     try {
       const response = await this.client.post<LatitudeAPIServerResponse>(
         `/servers/${serverId}/unlock`,
@@ -1165,6 +929,28 @@ export class LatitudeAPIClient {
     } catch (error) {
       throw new Error(
         `Failed to unlock server ${serverId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * List available operating systems
+   */
+  async listOperatingSystems(params?: {
+    "page[size]"?: number;
+    "page[number]"?: number;
+  }): Promise<LatitudeOperatingSystem[]> {
+    try {
+      const response = await this.client.get<LatitudeOperatingSystemsResponse>(
+        `/plans/operating_systems`,
+        { params }
+      );
+      return response.data?.data || [];
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch operating systems: ${
           error instanceof Error ? error.message : String(error)
         }`
       );

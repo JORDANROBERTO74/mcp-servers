@@ -17,8 +17,12 @@
     "build"
   ],
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": {
+    "name": "Roberto Jordan",
+    "email": "jordanroberto74@gmail.com",
+    "url": "https://robertojordan.vercel.app/"
+  },
+  "license": "MIT",
   "description": "",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.0",

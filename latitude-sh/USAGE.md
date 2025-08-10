@@ -35,6 +35,7 @@ This comprehensive guide shows you how to use the Latitude.sh MCP server with pr
   - [3. update_server_deploy_config](#3-update_server_deploy_config---update-deploy-config)
   - [4. lock_server](#4-lock_server---lock-a-server)
   - [5. unlock_server](#5-unlock_server---unlock-a-server)
+  - [6. list_operating_systems](#6-list_operating_systems---list-available-operating-systems)
 - [🚀 Smart Server Creation Workflow](#-smart-server-creation-workflow)
 - [📱 Integration Examples](#-integration-examples)
   - [Using with Shell Scripts](#using-with-shell-scripts)
@@ -227,7 +228,7 @@ npm run dev
 }
 ```
 
-### 7. `delete_project` - Delete Project
+### 6. `delete_project` - Delete Project
 
 **Request:**
 
@@ -801,6 +802,65 @@ Updatable fields: hostname, operating_system, raid, user_data (integer or null),
 ```
 
 ### 5. `unlock_server` - Unlock a Server
+
+### 6. `list_operating_systems` - List Available Operating Systems
+
+Lists all operating systems available to deploy and reinstall. Supports optional pagination parameters `page[size]` and `page[number]` as per the official API.
+
+Reference: [List all operating systems available](https://docs.latitude.sh/reference/get-plans-operating-system)
+
+**Request (no params):**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 101,
+  "method": "tools/call",
+  "params": { "name": "list_operating_systems", "arguments": {} }
+}
+```
+
+**Request (with pagination):**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 102,
+  "method": "tools/call",
+  "params": {
+    "name": "list_operating_systems",
+    "arguments": { "page[size]": 20, "page[number]": 1 }
+  }
+}
+```
+
+**Response (API-like JSON in content[0].text):**
+
+```json
+{
+  "data": [
+    {
+      "id": "os_...",
+      "type": "operating_system",
+      "attributes": {
+        "name": "Ubuntu 24.04",
+        "distro": "ubuntu",
+        "slug": "ubuntu_24_04_x64_lts",
+        "version": "24.04",
+        "user": "ubuntu",
+        "features": {
+          "raid": true,
+          "rescue": true,
+          "ssh_keys": true,
+          "user_data": true
+        },
+        "provisionable_on": ["c2.small.x86", "c2.medium.x86"]
+      }
+    }
+  ],
+  "meta": { "total": 20 }
+}
+```
 
 **Request:**
 

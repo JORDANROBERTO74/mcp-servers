@@ -3,7 +3,11 @@
   "version": "0.4.0",
   "description": "MCP server for latitude.sh project access",
   "license": "MIT",
-  "author": "Your Name",
+  "author": {
+    "name": "Roberto Jordan",
+    "email": "jordanroberto74@gmail.com",
+    "url": "https://robertojordan.vercel.app/"
+  },
   "homepage": "https://modelcontextprotocol.io",
   "type": "module",
   "bin": {
