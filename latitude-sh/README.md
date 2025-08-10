@@ -1,6 +1,46 @@
 # Latitude.sh MCP Server
 
+[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](https://github.com/jordanroberto74/mcp-servers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
+[![MCP SDK](https://img.shields.io/badge/MCP%20SDK-1.17.0-blue)](https://www.npmjs.com/package/@modelcontextprotocol/sdk)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8.2-blue)](https://www.typescriptlang.org/)
+
 A comprehensive Model Context Protocol (MCP) server that provides intelligent access to your Latitude.sh infrastructure, including projects, servers, plans, and smart server creation workflows.
+
+## ⚠️ IMPORTANT: How to Use This Server
+
+**This is an MCP server, NOT a standalone application.**
+
+- ✅ **CORRECT**: Use with MCP clients (Claude Desktop, Cursor, etc.) by pointing to `dist/index.js`
+- ❌ **INCORRECT**: Do NOT use the `run-*.js` scripts - they are only for testing/development
+- 🎯 **Purpose**: The server exposes tools like `list_projects`, `create_server`, etc. to MCP clients
+
+## Table of Contents
+
+- [🚀 Features](#-features)
+  - [📁 Project Management](#-project-management)
+  - [💰 Plans](#-plans)
+  - [🌍 Region Management](#-region-management)
+  - [🖥️ Server Management](#-server-management)
+  - [🧠 Smart Server Creation](#-smart-server-creation)
+  - [🔧 General Tools](#-general-tools)
+- [📋 Complete Tool List](#-complete-tool-list-23-tools)
+- [🚀 Smart Server Creation Script](#-smart-server-creation-script)
+- [📦 Installation](#-installation)
+- [⚙️ Configuration](#️-configuration)
+- [🏃 Running the Server](#-running-the-server)
+- [🛠️ Available Scripts](#️-available-scripts-12-scripts)
+- [🔧 Tool Schemas](#-tool-schemas)
+- [📖 Response Format](#-response-format)
+- [🚨 Error Handling](#-error-handling)
+- [🏗️ Development](#️-development)
+- [🔗 API Integration](#-api-integration)
+- [🔒 Security Considerations](#-security-considerations)
+- [🎯 Integration Examples](#-integration-examples)
+- [🆘 Support](#-support)
+- [📝 Changelog](#-changelog)
+- [📄 License](#-license)
 
 ## 🚀 Features
 
@@ -38,39 +78,40 @@ A comprehensive Model Context Protocol (MCP) server that provides intelligent ac
 - **Get Server Creation Flow**: Intelligent workflow with real-time validation
 - **Validate Server Config**: Pre-validate configurations before creation
 - **Get Available Plans**: List all plans with specifications and pricing
-- **Get Available Regions**: Check region availability for specific plans
+- **Get Available Regions**: Check region availability for specific plans (argument `plan` accepts any plan ID string)
 
 ### 🔧 General Tools
 
 - **Test Connection**: Verify API connectivity and authentication
 
-## 📋 Complete Tool List (23 Tools)
+## 📋 Complete Tool List (24 Tools)
 
-| Tool                          | Description                   | Status         |
-| ----------------------------- | ----------------------------- | -------------- |
-| `list_projects`               | List projects with filtering  | ✅ Implemented |
-| `get_project`                 | Get detailed project info     | ✅ Implemented |
-| `search_projects`             | Search projects by query      | ✅ Implemented |
-| `create_project`              | Create new project            | ✅ Implemented |
-| `update_project`              | Update existing project       | ✅ Implemented |
-| `delete_project`              | Delete project                | ✅ Implemented |
-| `list_servers`                | List servers with filtering   | ✅ Implemented |
-| `create_server`               | Create new server             | ✅ Implemented |
-| `get_server`                  | Get detailed server info      | ✅ Implemented |
-| `update_server`               | Update existing server        | ✅ Implemented |
-| `delete_server`               | Delete server                 | ✅ Implemented |
-| `get_available_plans`         | List all available plans      | ✅ Implemented |
-| `get_plan`                    | Get a specific plan by ID     | ✅ Implemented |
-| `get_available_regions`       | Get regions for specific plan | ✅ Implemented |
-| `list_regions`                | List all global regions       | ✅ Implemented |
-| `get_region`                  | Get a specific global region  | ✅ Implemented |
-| `get_server_creation_flow`    | Smart creation workflow       | ✅ Implemented |
-| `validate_server_config`      | Pre-validate server config    | ✅ Implemented |
-| `test_connection`             | Test API connection           | ✅ Implemented |
-| `get_server_deploy_config`    | Get server deploy config      | ✅ Implemented |
-| `update_server_deploy_config` | Update server deploy config   | ✅ Implemented |
-| `lock_server`                 | Lock a server                 | ✅ Implemented |
-| `unlock_server`               | Unlock a server               | ✅ Implemented |
+| Tool                          | Description                      | Status                          |
+| ----------------------------- | -------------------------------- | ------------------------------- |
+| `list_projects`               | List projects with filtering     | ✅ Implemented                  |
+| `get_project`                 | Get detailed project info        | ✅ Implemented                  |
+| `search_projects`             | Search projects by query         | ✅ Implemented                  |
+| `create_project`              | Create new project               | ✅ Implemented                  |
+| `update_project`              | Update existing project          | ✅ Implemented                  |
+| `delete_project`              | Delete project                   | ✅ Implemented                  |
+| `list_servers`                | List servers with filtering      | ✅ Implemented                  |
+| `create_server`               | Create new server                | ✅ Implemented                  |
+| `get_server`                  | Get detailed server info         | ✅ Implemented                  |
+| `update_server`               | Update existing server           | ✅ Implemented (hostname, tags) |
+| `delete_server`               | Delete server                    | ✅ Implemented                  |
+| `get_available_plans`         | List all available plans         | ✅ Implemented                  |
+| `get_plan`                    | Get a specific plan by ID        | ✅ Implemented                  |
+| `get_available_regions`       | Get regions for specific plan    | ✅ Implemented                  |
+| `list_regions`                | List all global regions          | ✅ Implemented                  |
+| `get_region`                  | Get a specific global region     | ✅ Implemented                  |
+| `get_server_creation_flow`    | Smart creation workflow          | ✅ Implemented                  |
+| `validate_server_config`      | Pre-validate server config       | ✅ Implemented                  |
+| `test_connection`             | Test API connection              | ✅ Implemented                  |
+| `get_server_deploy_config`    | Get server deploy config         | ✅ Implemented                  |
+| `update_server_deploy_config` | Update server deploy config      | ✅ Implemented                  |
+| `lock_server`                 | Lock a server                    | ✅ Implemented                  |
+| `unlock_server`               | Unlock a server                  | ✅ Implemented                  |
+| `list_operating_systems`      | List available operating systems | ✅ Implemented                  |
 
 ## 🚀 Smart Server Creation Script
 
@@ -97,7 +138,6 @@ node run-create-server.js
 - Plan selection with real-time specifications and regional availability
 - Comprehensive configuration validation before server creation
 - Optional configurations: SSH keys, tags, user data, startup scripts
-- Billing can be changed after creation via `update_server` (hourly, monthly, yearly)
 - Detailed server creation confirmation with all specifications
 
 ## 📦 Installation
@@ -167,20 +207,20 @@ npm run start
 
 ## 🛠️ Available Scripts (12 Scripts)
 
-| Script                           | Description                       |
-| -------------------------------- | --------------------------------- |
-| `run-create-server.js`           | Smart interactive server creation |
-| `run-list-projects.js`           | List all projects                 |
-| `run-list-projects-on_demand.js` | List only on-demand projects      |
-| `run-list-plans.js`              | List all available server plans   |
-| `run-list-servers.js`            | List all servers                  |
-| `run-get-project.js`             | Get details of a specific project |
-| `run-get-server.js`              | Get details of a specific server  |
-| `run-create-project.js`          | Create a new project              |
-| `run-update-project.js`          | Update an existing project        |
-| `run-delete-project.js`          | Delete a project                  |
-| `run-delete-server.js`           | Delete a server                   |
-| `run-search-projects.js`         | Search projects by query          |
+| Script                           | Description                                   | Usage Example                                     |
+| -------------------------------- | --------------------------------------------- | ------------------------------------------------- |
+| `run-create-server.js`           | Smart interactive server creation             | `node run-create-server.js`                       |
+| `run-create-project.js`          | Interactive project creation                  | `node run-create-project.js`                      |
+| `run-list-projects.js`           | List all projects with pagination             | `node run-list-projects.js`                       |
+| `run-list-projects-on_demand.js` | List only on-demand projects                  | `node run-list-projects-on_demand.js`             |
+| `run-list-servers.js`            | List all servers with filtering               | `node run-list-servers.js`                        |
+| `run-list-plans.js`              | List all available server plans               | `node run-list-plans.js`                          |
+| `run-get-project.js`             | Get details of a specific project             | `node run-get-project.js my-project-id`           |
+| `run-get-server.js`              | Get details of a specific server              | `node run-get-server.js my-server-id`             |
+| `run-update-project.js`          | Interactive project update tool               | `node run-update-project.js my-project-id`        |
+| `run-search-projects.js`         | Search projects by query                      | `node run-search-projects.js "react" 25 1`        |
+| `run-delete-project.js`          | Delete a project with multi-step confirmation | `node run-delete-project.js my-project-id`        |
+| `run-delete-server.js`           | Delete a server with confirmation             | `node run-delete-server.js my-server-id "reason"` |
 
 ## 🔧 Tool Schemas
 
@@ -224,12 +264,12 @@ npm run start
 {
   "page[size]": 20,
   "page[number]": 1,
-  "status": "deploying", // Optional: any string status
-  "projectId": "proj_123456789", // Optional: Convenience filter by project ID
-  "filter[project]": "proj_123456789", // Optional: Filter by project ID or slug
-  "filter[region]": "NYC", // Optional: Filter by region
-  "filter[hostname]": "name", // Optional: Filter by hostname
-  "filter[plan]": "c2-small-x86" // Optional: Filter by plan
+  "status": "running",
+  "projectId": "proj_123456789",
+  "filter[project]": "proj_123456789",
+  "filter[region]": "NYC",
+  "filter[hostname]": "name",
+  "filter[plan]": "c2-small-x86"
 }
 ```
 
@@ -238,7 +278,7 @@ npm run start
 ```json
 {
   "project": "proj_123456789", // Required: Project ID
-  "plan": "c2-small-x86", // Required: Plan slug
+  "plan": "plan_2X6KG5mA5yPBM", // Required: Plan ID
   "operating_system": "ubuntu_24_04_x64_lts", // Required: OS
   "hostname": "my-server", // Required: Server hostname
   "site": "NYC", // Required: Region code
@@ -255,9 +295,9 @@ npm run start
 {
   "serverId": "sv_123456789", // Required: Server ID
   "hostname": "new-hostname", // Optional: New hostname
-  "billing": "monthly", // Optional: hourly, monthly, yearly
-  "tags": ["tag1", "tag2"], // Optional: Array of tag IDs
-  "project": "proj_newProject123" // Optional: Move to different project
+  "billing": "monthly", // Optional: Billing model (hourly, monthly, yearly)
+  "project": "proj_987654321", // Optional: Move server to another project ID
+  "tags": ["tag1", "tag2"] // Optional: Array of tags
 }
 ```
 
@@ -276,26 +316,44 @@ npm run start
 ```json
 {
   "project_id": "proj_123456789", // Required: Project ID
-  "plan": "c2-small-x86", // Required: Plan slug
+  "plan": "plan_2X6KG5mA5yPBM", // Required: Plan ID
   "region": "NYC", // Required: Region code
   "operating_system": "ubuntu_24_04_x64_lts" // Optional: OS to validate
 }
 ```
 
-## 📖 Response Format
+#### `list_operating_systems`
 
-All tools return responses in the following format:
+Returns the catalogue of operating systems available for server deployment. Supports optional pagination.
 
 ```json
 {
-  "content": [
-    {
-      "type": "text",
-      "text": "Formatted response content with emojis and structured information"
-    }
-  ]
+  "page[size]": 20,
+  "page[number]": 1
 }
 ```
+
+## 📖 Response Format
+
+- Except for `test_connection`, all tools return a JSON body using a complete API-style structure:
+
+```json
+{
+  "data": {},
+  "meta": {}
+}
+```
+
+- This JSON payload is returned inside `content[0].text` as a string for MCP clients. Example for `list_projects`:
+
+```json
+{
+  "data": [{ "id": "proj_...", "type": "projects", "attributes": {} }],
+  "meta": { "total": 10, "page": 1, "limit": 20 }
+}
+```
+
+- `test_connection` returns plain-text success.
 
 ## 🚨 Error Handling
 
@@ -437,9 +495,66 @@ For issues and questions:
 4. **Check Documentation**: Review the Latitude.sh API documentation
 5. **Validate Configuration**: Use `validate_server_config` before creating servers
 
+## 📋 FAQ (Frequently Asked Questions)
+
+### General Usage
+
+**Q: How do I get started with this MCP server?**
+A: Follow the installation steps, configure your API key in `.env.local`, build the project with `npm run build`, and run it with `npm run start`.
+
+**Q: What's the difference between this server and the Latitude.sh web interface?**
+A: This MCP server provides programmatic access through AI assistants and automation tools, while the web interface is for manual management.
+
+**Q: Can I use this server in production?**
+A: Yes, but ensure you follow security best practices, use proper API key management, and implement monitoring.
+
+### Server Creation
+
+**Q: Why should I use `validate_server_config` before creating servers?**
+A: Validation prevents expensive failed deployments by checking project type, plan availability, and region stock before creation.
+
+**Q: What's the smart server creation flow?**
+A: It's an intelligent workflow that guides you through project selection, plan choice, region availability, and configuration validation.
+
+**Q: Can I create servers in reserved projects?**
+A: No, server creation is only supported for on-demand projects. Reserved projects require different provisioning workflows.
+
+### API and Authentication
+
+**Q: Where do I get my Latitude.sh API key?**
+A: Go to [Latitude.sh Account Settings → API Keys](https://latitude.sh/account/api-keys) to create a new API key.
+
+**Q: Why am I getting "Unauthorized" errors?**
+A: Check that your API key is correct, properly formatted in `.env.local`, and has the necessary permissions for the operations you're trying to perform.
+
+**Q: What permissions does my API key need?**
+A: Your API key needs read/write permissions for projects and servers. Admin permissions may be required for certain operations.
+
+### Troubleshooting
+
+**Q: The server creation is failing. What should I check?**
+A: 1) Validate your config first, 2) Ensure the project is on-demand, 3) Check region availability, 4) Verify plan exists, 5) Ensure hostname is unique.
+
+**Q: How do I debug connection issues?**
+A: Use the `test_connection` tool first, check your internet connection, verify the API endpoint, and review error messages for specific guidance.
+
+**Q: Can I run multiple operations simultaneously?**
+A: Yes, but be mindful of API rate limits. The server handles concurrent requests, but too many simultaneous operations may hit rate limits.
+
+### Advanced Usage
+
+**Q: How do I integrate this with CI/CD pipelines?**
+A: Use the provided utility scripts or create custom automation using the MCP protocol. See the integration examples in USAGE.md.
+
+**Q: Can I extend this server with custom tools?**
+A: Yes, the server is built with TypeScript and follows MCP patterns. You can add new tools by extending the tool handlers in `src/index.ts`.
+
+**Q: How do I handle errors gracefully in my automation?**
+A: Always check response `isError` flags, implement retry logic for rate limits, and use validation tools before expensive operations.
+
 ## 📝 Changelog
 
-### v0.4.0
+### v0.4.0 (Current)
 
 - **Updated `update_server` Tool**: Now supports official API parameters (hostname, billing, tags, project)
 - **Complete Tool Documentation**: All 17 tools fully documented with examples
@@ -463,7 +578,7 @@ For issues and questions:
 - **Pagination Support**: Proper pagination for large result sets
 - **Improved Formatting**: Better response formatting with emojis
 
-### v0.1.0 (Current)
+### v0.1.0
 
 - **Initial Release**: Basic project management functionality
 - **Project CRUD**: Create, read, update, delete projects

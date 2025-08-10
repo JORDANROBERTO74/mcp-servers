@@ -42,6 +42,13 @@ export interface LatitudeProject {
     created_at: string;
     updated_at: string;
   };
+  metadata?: {
+    tags: string[];
+    category: string;
+    framework?: string;
+    language?: string;
+    provisioning_type?: string;
+  };
 }
 
 export interface LatitudeProjectList {
@@ -57,6 +64,7 @@ export interface LatitudeProjectDetails extends LatitudeProject {
     category: string;
     framework?: string;
     language?: string;
+    provisioning_type?: string;
   };
 }
 
@@ -260,11 +268,12 @@ export interface ServerSearchParams {
 }
 
 export interface CreateServerParams {
-  project: string;
-  plan: string;
-  operating_system: string;
   hostname: string;
-  site: string;
+  projectId: string;
+  regionId: string;
+  planId: string;
+  operating_system?: string;
+  description?: string;
   sshKeys?: string[];
   tags?: string[];
   userData?: string;
@@ -283,16 +292,96 @@ export interface LatitudeAPIProjectResponse {
   data: LatitudeProject;
 }
 
+// Raw project data returned by API list endpoint (same as LatitudeProject)
+export type LatitudeAPIProjectData = LatitudeProject;
+
 export interface LatitudeAPIProjectsResponse {
-  data: LatitudeProject[];
+  data: LatitudeAPIProjectData[];
   meta?: {
-    pagination?: {
-      current_page: number;
-      per_page: number;
-      total_pages: number;
-      total_count: number;
+    total?: number;
+    page?: number;
+    limit?: number;
+  };
+}
+
+export interface LatitudeAPIServerData {
+  id: string;
+  type: string;
+  attributes: {
+    name: string;
+    description?: string;
+    created_at: string;
+    updated_at: string;
+    status:
+      | "running"
+      | "stopped"
+      | "starting"
+      | "stopping"
+      | "error"
+      | "deleted";
+    project_id: string;
+    region?: {
+      id: string;
+      name: string;
+      slug: string;
+    };
+    plan?: {
+      id: string;
+      name: string;
+      slug: string;
+      price: number;
+      currency: string;
+    };
+    ip_address?: string;
+    private_ip_address?: string;
+    ssh_keys?: Array<{
+      id: string;
+      name: string;
+      public_key: string;
+    }>;
+    tags?: string[];
+    specs?: {
+      cpu: number;
+      memory: number;
+      disk: number;
+      bandwidth: number;
+    };
+    os?: {
+      name: string;
+      version: string;
+      architecture: string;
+    };
+    network?: {
+      gateway?: string;
+      netmask?: string;
     };
   };
+}
+
+export interface LatitudeAPIPlanRegion {
+  locations?: {
+    available?: string[];
+    in_stock?: string[];
+  };
+  pricing?: Record<string, unknown>;
+}
+
+export interface LatitudeAPIPlanData {
+  id: string;
+  type: string;
+  attributes: {
+    name?: string;
+    slug?: string;
+    regions?: LatitudeAPIPlanRegion[];
+  } & Record<string, unknown>;
+}
+
+export interface LatitudeAPIPlanResponse {
+  data: LatitudeAPIPlanData;
+}
+
+export interface LatitudeAPIPlansResponse {
+  data: LatitudeAPIPlanData[];
 }
 
 export interface LatitudeAPIServerResponse {
@@ -300,14 +389,11 @@ export interface LatitudeAPIServerResponse {
 }
 
 export interface LatitudeAPIServersResponse {
-  data: LatitudeServer[];
+  data: LatitudeAPIServerData[];
   meta?: {
-    pagination?: {
-      current_page: number;
-      per_page: number;
-      total_pages: number;
-      total_count: number;
-    };
+    total?: number;
+    page?: number;
+    limit?: number;
   };
 }
 
@@ -515,4 +601,34 @@ export interface UpdateDeployConfigParams {
   ssh_keys?: number[]; // API expects array of integer ssh_key ids
   partitions?: UpdateDeployConfigPartition[];
   ipxe_url?: string | null;
+}
+
+// Operating Systems
+export interface LatitudeOSFeatures {
+  raid: boolean;
+  rescue: boolean;
+  ssh_keys: boolean;
+  user_data?: boolean;
+  accelerate?: boolean;
+}
+
+export interface LatitudeOperatingSystemAttributes {
+  name: string;
+  distro: string;
+  slug: string;
+  version: string;
+  user: string;
+  features: LatitudeOSFeatures;
+  provisionable_on: string[];
+}
+
+export interface LatitudeOperatingSystem {
+  id: string;
+  type: string; // "operating_system"
+  attributes: LatitudeOperatingSystemAttributes;
+}
+
+export interface LatitudeOperatingSystemsResponse {
+  data: LatitudeOperatingSystem[];
+  meta?: Record<string, unknown>;
 }

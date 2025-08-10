@@ -6,8 +6,12 @@ import { z } from "zod";
 try {
   dotenvConfig({ path: ".env.local" });
 } catch (error) {
-  // .env.local doesn't exist, continue with system environment variables
-  console.error("⚠️  .env.local not found, using system environment variables");
+  if (process.env.NODE_ENV === "development") {
+    // Only warn in development to avoid noisy logs in production
+    console.error(
+      "⚠️  .env.local not found, using system environment variables"
+    );
+  }
 }
 
 // Schema for environment variables validation

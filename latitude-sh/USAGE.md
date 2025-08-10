@@ -2,6 +2,50 @@
 
 This comprehensive guide shows you how to use the Latitude.sh MCP server with practical examples for all available tools.
 
+## Table of Contents
+
+- [🚀 Quick Start](#-quick-start)
+  - [1. Installation & Setup](#1-installation--setup)
+  - [2. Basic Usage](#2-basic-usage)
+- [📁 Project Management Tools](#-project-management-tools)
+  - [1. list_projects](#1-list_projects---list-all-projects)
+  - [2. get_project](#2-get_project---get-project-details)
+  - [3. search_projects](#3-search_projects---search-projects)
+  - [4. create_project](#4-create_project---create-new-project)
+  - [5. update_project](#5-update_project---update-existing-project)
+  - [6. delete_project](#6-delete_project---delete-project)
+- [🖥️ Server Management Tools](#️-server-management-tools)
+  - [1. list_servers](#1-list_servers---list-all-servers)
+  - [2. create_server](#2-create_server---create-new-server)
+  - [3. get_server](#3-get_server---get-server-details)
+  - [4. update_server](#4-update_server---update-server)
+  - [5. delete_server](#5-delete_server---delete-server)
+- [🧠 Smart Server Creation Tools](#-smart-server-creation-tools)
+  - [1. get_server_creation_flow](#1-get_server_creation_flow---get-creation-workflow)
+  - [2. validate_server_config](#2-validate_server_config---validate-configuration)
+- [📊 Plan and Region Tools](#-plan-and-region-tools)
+  - [1. get_available_plans](#1-get_available_plans---list-all-plans)
+  - [2. get_available_regions](#2-get_available_regions---get-regions-for-plan)
+  - [3. get_plan](#3-get_plan---get-plan-by-id)
+  - [4. list_regions](#4-list_regions---list-global-regions)
+  - [5. get_region](#5-get_region---get-region-by-id)
+- [🔧 Utility Tools](#-utility-tools)
+  - [1. test_connection](#1-test_connection---test-api-connection)
+  - [2. get_server_deploy_config](#2-get_server_deploy_config---retrieve-deploy-config)
+  - [3. update_server_deploy_config](#3-update_server_deploy_config---update-deploy-config)
+  - [4. lock_server](#4-lock_server---lock-a-server)
+  - [5. unlock_server](#5-unlock_server---unlock-a-server)
+  - [6. list_operating_systems](#6-list_operating_systems---list-available-operating-systems)
+- [🚀 Smart Server Creation Workflow](#-smart-server-creation-workflow)
+- [📱 Integration Examples](#-integration-examples)
+  - [Using with Shell Scripts](#using-with-shell-scripts)
+  - [Using with Python](#using-with-python)
+- [⚠️ Error Handling](#️-error-handling)
+  - [Common Error Patterns](#common-error-patterns)
+  - [Error Recovery Strategies](#error-recovery-strategies)
+- [🎯 Best Practices](#-best-practices)
+- [🆘 Troubleshooting](#-troubleshooting)
+
 ## 🚀 Quick Start
 
 ### 1. Installation & Setup
@@ -67,7 +111,7 @@ npm run dev
 }
 ```
 
-**Response:**
+**Response (API-like JSON in content[0].text):**
 
 ```json
 {
@@ -77,7 +121,7 @@ npm run dev
     "content": [
       {
         "type": "text",
-        "text": "Found 5 projects (Page 1 of 1):\n\n📁 **My React App** (ID: proj_123)\n📝 Description: A modern React application\n👤 Team: na (na)\n📅 Created: 1/15/2024, 10:30:00 AM\n📅 Updated: 2/20/2024, 3:45:00 PM\n🌍 Environment: Development\n💳 Billing: Normal (Normal)\n⚙️ Provisioning: on_demand\n🏷️ Tags: javascript, react\n📊 Stats: 2 servers, 0 databases, 1 storages\n\n---"
+        "text": "{\n  \"data\": [\n    { \"id\": \"proj_...\", \"type\": \"projects\", \"attributes\": { /* ... */ } }\n  ],\n  \"meta\": { \"total\": 10, \"page\": 1, \"limit\": 20 }\n}"
       }
     ]
   }
@@ -102,7 +146,7 @@ npm run dev
 }
 ```
 
-### 4. `search_projects` - Search Projects
+### 3. `search_projects` - Search Projects
 
 **Request:**
 
@@ -121,7 +165,7 @@ npm run dev
 }
 ```
 
-### 5. `create_project` - Create New Project
+### 4. `create_project` - Create New Project
 
 **Request:**
 
@@ -155,14 +199,14 @@ npm run dev
     "content": [
       {
         "type": "text",
-        "text": "✅ Project created successfully!\n\n📁 **AI Development Project** (ID: proj_newId123)\n📝 Description: Machine learning experiments and model training\n👤 Team: na (na)\n📅 Created: 1/8/2025, 2:15:00 PM\n📅 Updated: 1/8/2025, 2:15:00 PM\n🌍 Environment: Development\n💳 Billing: Normal (Normal)\n⚙️ Provisioning: on_demand\n🏷️ Tags: ai, machine-learning, python\n📊 Stats: 0 servers, 0 databases, 0 storages"
+        "text": "{ \n  \"data\": { \"id\": \"proj_...\", \"type\": \"projects\", \"attributes\": { /* ... */ } },\n  \"meta\": {}\n}"
       }
     ]
   }
 }
 ```
 
-### 6. `update_project` - Update Existing Project
+### 5. `update_project` - Update Existing Project
 
 **Request:**
 
@@ -174,7 +218,7 @@ npm run dev
   "params": {
     "name": "update_project",
     "arguments": {
-      "projectId": "proj_123456789",
+      "projectId": "my-project-id",
       "name": "Updated AI Project",
       "description": "Advanced ML experiments with GPU acceleration",
       "environment": "Production",
@@ -184,7 +228,7 @@ npm run dev
 }
 ```
 
-### 7. `delete_project` - Delete Project
+### 6. `delete_project` - Delete Project
 
 **Request:**
 
@@ -196,7 +240,7 @@ npm run dev
   "params": {
     "name": "delete_project",
     "arguments": {
-      "projectId": "proj_123456789",
+      "projectId": "my-project-id",
       "confirm": true
     }
   }
@@ -236,7 +280,7 @@ npm run dev
     "arguments": {
       "page[size]": 10,
       "page[number]": 1,
-      "projectId": "proj_123456789",
+      "projectId": "my-project-id",
       "filter[region]": "NYC",
       "filter[plan]": "c2-small-x86",
       "filter[hostname]": "web-server"
@@ -255,7 +299,7 @@ npm run dev
     "content": [
       {
         "type": "text",
-        "text": "Found 2 servers (Page 1 of 1):\n\n🖥️ **web-server-01** (ID: sv_123)\n📋 Label: 19CS005830\n🏷️ Status: 🟢 on\n💰 Price: $0.18/hour\n🎭 Role: Bare Metal\n🌍 Region: New York, United States\n🏢 Site: NYC (NYC)\n💻 Plan: c2.small.x86 (hourly)\n📅 Created: 1/15/2024, 10:30:00 AM\n🌐 IPv4: 192.168.1.100\n🌐 IPv6: 2001:db8::1\n🔒 Locked: No\n🆘 Rescue Allowed: Yes\n📊 IPMI Status: Active\n👥 Team: MyTeam (myteam)\n📁 Project: Web Project (web-proj)\n💿 OS: Ubuntu 24.04 LTS\n📦 Distro: Ubuntu (focal)\n⚙️ Specs: Xeon E-2234 CPU @ 3.60GHz (4 cores), 32 GB, 500 GB SSD, 1 Gbit/s\n🔌 Interfaces: eth0 (public), eth1 (private)\n🏷️ Tags: web, production\n---"
+        "text": "{ \n  \"data\": [ { \"id\": \"sv_...\", \"type\": \"servers\", \"attributes\": { /* ... */ } } ],\n  \"meta\": { \"total\": 2, \"page\": 1, \"limit\": 20 }\n}"
       }
     ]
   }
@@ -274,8 +318,8 @@ npm run dev
   "params": {
     "name": "create_server",
     "arguments": {
-      "project": "proj_123456789",
-      "plan": "c2-small-x86",
+      "project": "my-project-id",
+      "plan": "my-plan-id",
       "operating_system": "ubuntu_24_04_x64_lts",
       "hostname": "my-web-server",
       "site": "NYC"
@@ -294,8 +338,8 @@ npm run dev
   "params": {
     "name": "create_server",
     "arguments": {
-      "project": "proj_123456789",
-      "plan": "c2-medium-x86",
+      "project": "my-project-id",
+      "plan": "my-plan-id",
       "operating_system": "ubuntu_24_04_x64_lts",
       "hostname": "production-api-server",
       "site": "NYC",
@@ -318,7 +362,7 @@ npm run dev
     "content": [
       {
         "type": "text",
-        "text": "✅ Server created successfully!\n\n🖥️ **production-api-server** (ID: sv_newServer123)\n📋 Label: 19CS005831\n🏷️ Status: ⚪ deploying\n💰 Price: $0.35/hour\n🎭 Role: Bare Metal\n🌍 Region: New York, United States\n🏢 Site: NYC (NYC)\n💻 Plan: c2.medium.x86 (monthly)\n📅 Created: 1/8/2025, 3:20:00 PM\n🌐 IPv4: 192.168.1.101\n🌐 IPv6: 2001:db8::2\n🔒 Locked: No\n🆘 Rescue Allowed: Yes\n📊 IPMI Status: Initializing\n👥 Team: MyTeam (myteam)\n📁 Project: API Project (api-proj)\n💿 OS: Ubuntu 24.04 LTS\n📦 Distro: Ubuntu (jammy)\n⚙️ Specs: Xeon E-2278G CPU @ 3.40GHz (8 cores), 64 GB, 2 X 500 GB SSD, 10 Gbit/s\n🔌 Interfaces: eth0 (public), eth1 (private)\n🏷️ Tags: api, production, nodejs\n---"
+        "text": "{ \n  \"data\": { \"id\": \"sv_...\", \"type\": \"servers\", \"attributes\": { /* ... */ } },\n  \"meta\": {}\n}"
       }
     ]
   }
@@ -355,7 +399,7 @@ npm run dev
   "params": {
     "name": "update_server",
     "arguments": {
-      "serverId": "sv_123456789",
+      "serverId": "my-server-id",
       "hostname": "updated-web-server",
       "billing": "monthly",
       "tags": ["web", "production", "updated"],
@@ -377,7 +421,7 @@ npm run dev
   "params": {
     "name": "delete_server",
     "arguments": {
-      "server_id": "sv_123456789",
+      "server_id": "my-server-id",
       "reason": "Server no longer needed",
       "confirm": true
     }
@@ -413,7 +457,7 @@ npm run dev
     "content": [
       {
         "type": "text",
-        "text": "🚀 **SERVER CREATION FLOW**\n\n📋 **STEP 1: Select Project (on-demand only)**\n✅ Found 5 on-demand project(s):\n   1. AI Project (proj_123)\n   2. Web App (proj_456)\n   3. API Backend (proj_789)\n\n💻 **STEP 2: Choose Plan**\n✅ Found 21 available plans\nPopular options:\n   1. c2-small-x86 - c2.small.x86\n      CPU: 4 cores E-2234\n      Memory: 32GB\n      Regions: MIA2, SAO, SAO2, SYD...\n\n🌍 **STEP 3: Select Region**\nRegion availability depends on the selected plan. Common regions:\n   • US: NYC, LAX, DAL, CHI, MIA2\n   • LATAM: SAO, SAO2, MEX2, BGT, SAN3\n   • APAC: TYO3, SYD, SGP\n   • EU: LON, FRA, AMS\n\n🖥️ **STEP 4: Choose Operating System**\nRecommended: ubuntu_24_04_x64_lts (most compatible)\nOther options: centos_8_x64, debian_12_x64, etc.\n\n🏷️ **STEP 5: Set Hostname**\nUnique name to identify your server\n\n⚙️ **OPTIONAL CONFIGURATION**\n   • SSH Keys: For secure access\n   • Tags: For organization\n   • User Data: Initialization script\n   • Startup Script: Post-boot configuration\n   • Billing Type: hourly, monthly, yearly\n\n✅ **VALIDATION CHECKLIST**\nBefore creating a server, ensure:\n   1. Project has provisioning_type='on_demand'\n   2. Plan is available in your desired region\n   3. Operating system is supported\n   4. Hostname is unique\n\n💡 **TIPS**\n   • Use 'validate_server_config' tool before creation\n   • Start with c2-small-x86 for testing\n   • Choose region closest to your users\n   • Use hourly billing for temporary servers"
+        "text": "{ \n  \"data\": { \n    \"projects_on_demand\": [ /* ... */ ],\n    \"plans\": [ /* ... */ ],\n    \"popular_plan_slugs\": [ \"c2-small-x86\", \"c2-medium-x86\", \"c3-small-x86\", \"m3-large-x86\" ]\n  },\n  \"meta\": { \"total_on_demand_projects\": 5, \"total_plans\": 21 }\n}"
       }
     ]
   }
@@ -432,8 +476,8 @@ npm run dev
   "params": {
     "name": "validate_server_config",
     "arguments": {
-      "project_id": "proj_123456789",
-      "plan": "c2-small-x86",
+      "project_id": "my-project-id",
+      "plan": "my-plan-id",
       "region": "NYC",
       "operating_system": "ubuntu_24_04_x64_lts"
     }
@@ -468,7 +512,7 @@ npm run dev
     "content": [
       {
         "type": "text",
-        "text": "🔍 **SERVER CONFIGURATION VALIDATION**\n\n📁 **PROJECT VALIDATION**\n❌ Project is 'reserved', must be 'on_demand'\n\n💻 **PLAN VALIDATION**\n❌ Plan 'invalid-plan' not found\n\n🌍 **REGION VALIDATION**\n❌ Region 'INVALID' not available for plan 'c2-small-x86'\n\n📋 **VALIDATION SUMMARY**\n❌ Configuration has 3 issue(s) that must be fixed\n   • Project is not on-demand\n   • Plan not found\n   • Region not available for this plan\n\n💡 **SUGGESTIONS**\n   • Use 'get_server_creation_flow' to see available options\n   • Use 'list_projects' to find on-demand projects\n   • Use 'get_available_plans' to see all plans"
+        "text": "🔍 **SERVER CONFIGURATION VALIDATION**\n\n📁 **PROJECT VALIDATION**\n❌ Project is 'reserved', must be 'on_demand'\n\n💻 **PLAN VALIDATION**\n❌ Plan 'invalid-plan' not found\n\n🌍 **REGION VALIDATION**\n❌ Region 'INVALID' not available for plan 'plan_2X6KG5mA5yPBM'\n\n📋 **VALIDATION SUMMARY**\n❌ Configuration has 3 issue(s) that must be fixed\n   • Project is not on-demand\n   • Plan not found\n   • Region not available for this plan\n\n💡 **SUGGESTIONS**\n   • Use 'get_server_creation_flow' to see available options\n   • Use 'list_projects' to find on-demand projects\n   • Use 'get_available_plans' to see all plans"
       }
     ]
   }
@@ -522,7 +566,7 @@ npm run dev
   "params": {
     "name": "get_available_regions",
     "arguments": {
-      "plan": "c2-small-x86"
+      "plan": "my-plan-id"
     }
   }
 }
@@ -538,7 +582,7 @@ npm run dev
     "content": [
       {
         "type": "text",
-        "text": "🌍 Available Regions for plan c2-small-x86:\n\n1. 🟡 United States\n   📍 In stock:  \n   ⏳ Available: DAL, LAX, NYC, CHI, ASH, MIA2, LAX2\n   💵 USD: $0.04/min, $2.4/hr, $92/mo, $773/yr\n   🇧🇷 BRL: R$0.2/min, R$12/hr, R$460/mo, R$3864/yr\n---"
+        "text": "🌍 Available Regions for plan plan_2X6KG5mA5yPBM:\n\n1. 🟡 United States\n   📍 In stock:  \n   ⏳ Available: DAL, LAX, NYC, CHI, ASH, MIA2, LAX2\n   💵 USD: $0.04/min, $2.4/hr, $92/mo, $773/yr\n   🇧🇷 BRL: R$0.2/min, R$12/hr, R$460/mo, R$3864/yr\n---"
       }
     ]
   }
@@ -578,7 +622,7 @@ npm run dev
 }
 ```
 
-### 3. `list_regions` - List Global Regions
+### 4. `list_regions` - List Global Regions
 
 **Request:**
 
@@ -594,7 +638,7 @@ npm run dev
 }
 ```
 
-### 4. `get_region` - Get Region by ID
+### 5. `get_region` - Get Region by ID
 
 **Request:**
 
@@ -759,6 +803,65 @@ Updatable fields: hostname, operating_system, raid, user_data (integer or null),
 
 ### 5. `unlock_server` - Unlock a Server
 
+### 6. `list_operating_systems` - List Available Operating Systems
+
+Lists all operating systems available to deploy and reinstall. Supports optional pagination parameters `page[size]` and `page[number]` as per the official API.
+
+Reference: [List all operating systems available](https://docs.latitude.sh/reference/get-plans-operating-system)
+
+**Request (no params):**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 101,
+  "method": "tools/call",
+  "params": { "name": "list_operating_systems", "arguments": {} }
+}
+```
+
+**Request (with pagination):**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 102,
+  "method": "tools/call",
+  "params": {
+    "name": "list_operating_systems",
+    "arguments": { "page[size]": 20, "page[number]": 1 }
+  }
+}
+```
+
+**Response (API-like JSON in content[0].text):**
+
+```json
+{
+  "data": [
+    {
+      "id": "os_...",
+      "type": "operating_system",
+      "attributes": {
+        "name": "Ubuntu 24.04",
+        "distro": "ubuntu",
+        "slug": "ubuntu_24_04_x64_lts",
+        "version": "24.04",
+        "user": "ubuntu",
+        "features": {
+          "raid": true,
+          "rescue": true,
+          "ssh_keys": true,
+          "user_data": true
+        },
+        "provisionable_on": ["c2.small.x86", "c2.medium.x86"]
+      }
+    }
+  ],
+  "meta": { "total": 20 }
+}
+```
+
 **Request:**
 
 ```json
@@ -810,7 +913,7 @@ Updatable fields: hostname, operating_system, raid, user_data (integer or null),
   "name": "validate_server_config",
   "arguments": {
     "project_id": "proj_123456789",
-    "plan": "c2-medium-x86",
+    "plan": "plan_2X6KG5mA5yPBM",
     "region": "NYC",
     "operating_system": "ubuntu_24_04_x64_lts"
   }
@@ -824,7 +927,7 @@ Updatable fields: hostname, operating_system, raid, user_data (integer or null),
   "name": "create_server",
   "arguments": {
     "project": "proj_123456789",
-    "plan": "c2-medium-x86",
+    "plan": "plan_2X6KG5mA5yPBM",
     "operating_system": "ubuntu_24_04_x64_lts",
     "hostname": "production-web-01",
     "site": "NYC",
@@ -1080,5 +1183,7 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"test_conne
 # Run with debug output
 NODE_ENV=development node dist/index.js 2>&1 | tee debug.log
 ```
+
+Note: By default, example responses show the exact API-like JSON returned inside `content[0].text`. Many utility scripts in `latitude-sh` print the full JSON response and then a readable summary.
 
 This comprehensive guide covers all available tools and their usage patterns. For additional help, use the `get_server_creation_flow` tool to get real-time guidance for server creation workflows.

@@ -161,36 +161,25 @@ async function createServerSmart() {
     console.log("\n🎯 Step 2: Configure your server");
     console.log("================================");
 
-    // Get available projects
+    // Get available projects (JSON)
     console.log("\n📁 Getting available projects...");
     const projectsResult = await sendToMCPServer("list_projects", {
       "extra_fields[projects]": "stats",
     });
 
-    // Parse projects and filter on-demand
-    const projectLines = projectsResult.content[0].text.split("\n");
-    const onDemandProjects = [];
-    let currentProject = null;
-
-    for (const line of projectLines) {
-      // Look for project headers like "📁 **projct-08** (ID: proj_MDEOaPE110wgB)"
-      const projectMatch = line.match(/📁 \*\*(.*?)\*\* \(ID: (proj_[^)]+)\)/);
-      if (projectMatch) {
-        if (currentProject) onDemandProjects.push(currentProject);
-        currentProject = {
-          id: projectMatch[2],
-          name: projectMatch[1],
-          provisioning: "",
-        };
-      } else if (line.includes("⚙️ Provisioning:") && currentProject) {
-        currentProject.provisioning = line.split("⚙️ Provisioning: ")[1].trim();
-      }
+    let validProjects = [];
+    try {
+      const payload = JSON.parse(projectsResult.content[0].text);
+      const projects = Array.isArray(payload.data) ? payload.data : [];
+      validProjects = projects.filter(
+        (p) => p?.metadata?.provisioning_type === "on_demand"
+      );
+    } catch (_e) {
+      console.log(
+        "❌ Failed to parse projects JSON. Please try again or list projects manually."
+      );
+      validProjects = [];
     }
-    if (currentProject) onDemandProjects.push(currentProject);
-
-    const validProjects = onDemandProjects.filter(
-      (p) => p.provisioning === "on_demand"
-    );
 
     if (validProjects.length === 0) {
       console.log(
@@ -209,34 +198,64 @@ async function createServerSmart() {
       selectedProjectOption.includes(p.id)
     );
 
-    // Get available plans
+    // Get available plans (IDs)
     console.log("\n💻 Getting available plans...");
     const plansResult = await sendToMCPServer("get_available_plans");
+    let plansPayload;
+    try {
+      plansPayload = JSON.parse(plansResult.content[0].text);
+    } catch (e) {
+      console.log(
+        "❌ Failed to parse plans payload. Falling back to manual entry."
+      );
+      plansPayload = { data: [] };
+    }
+    const plans = Array.isArray(plansPayload.data) ? plansPayload.data : [];
+    const planOptions = plans.map((p) => {
+      const name =
+        (p.attributes && (p.attributes.name || p.attributes.slug)) || p.id;
+      return `${name} (ID: ${p.id})`;
+    });
+    const selectedPlanOption = await askSelection(
+      "Select plan:",
+      planOptions.length > 0 ? planOptions : ["Enter custom plan ID"],
+      true
+    );
+    const planIdMatch = String(selectedPlanOption).match(/\(ID: ([^)]+)\)/);
+    const selectedPlanId = planIdMatch
+      ? planIdMatch[1]
+      : await askQuestion("Enter plan ID (e.g., plan_2X6KG5mA5yPBM): ");
 
-    // Parse popular plans
-    const popularPlans = [
-      "c2-small-x86",
-      "c2-medium-x86",
-      "c3-small-x86",
-      "m3-large-x86",
-    ];
-    const selectedPlan = await askSelection("Select plan:", popularPlans, true);
-
-    // Select region
-    const commonRegions = [
-      "MIA2",
-      "NYC",
-      "LAX",
-      "SAO",
-      "SAO2",
-      "TYO3",
-      "SYD",
-      "CHI",
-      "DAL",
-    ];
+    // Select region (fetch based on plan ID)
+    console.log("\n🌍 Getting available regions for the selected plan...");
+    const regionsResult = await sendToMCPServer("get_available_regions", {
+      plan: selectedPlanId,
+    });
+    let regionsPayload;
+    try {
+      regionsPayload = JSON.parse(regionsResult.content[0].text);
+    } catch (e) {
+      console.log(
+        "❌ Failed to parse regions payload. Falling back to manual entry."
+      );
+      regionsPayload = { data: [] };
+    }
+    const regionsData = Array.isArray(regionsPayload.data)
+      ? regionsPayload.data
+      : [];
+    const regionCodes = new Set();
+    for (const r of regionsData) {
+      if (r.locations && Array.isArray(r.locations.in_stock)) {
+        r.locations.in_stock.forEach((code) => regionCodes.add(code));
+      }
+      if (r.locations && Array.isArray(r.locations.available)) {
+        r.locations.available.forEach((code) => regionCodes.add(code));
+      }
+    }
+    const regionOptions = Array.from(regionCodes);
     const selectedRegion = await askSelection(
       "Select region:",
-      commonRegions,
+      regionOptions.length > 0 ? regionOptions : ["Enter custom region code"],
       true
     );
 
@@ -261,7 +280,7 @@ async function createServerSmart() {
     console.log("\n🔍 Step 3: Validating configuration...");
     const validationResult = await sendToMCPServer("validate_server_config", {
       project_id: selectedProject.id,
-      plan: selectedPlan,
+      plan: selectedPlanId,
       region: selectedRegion,
       operating_system: selectedOS,
     });
@@ -318,21 +337,16 @@ async function createServerSmart() {
       startupScript = await askQuestion("Enter startup script: ");
     }
 
-    const billingOptions = ["hourly", "monthly", "yearly"];
-    const billingType = await askSelection(
-      "Select billing type:",
-      billingOptions
-    );
+    // Billing can be changed later with update_server; skipped here
 
     // Step 5: Final confirmation and creation
     console.log("\n📋 Step 5: Final configuration summary");
     console.log("====================================");
     console.log(`Project: ${selectedProject.name} (${selectedProject.id})`);
-    console.log(`Plan: ${selectedPlan}`);
+    console.log(`Plan ID: ${selectedPlanId}`);
     console.log(`Region: ${selectedRegion}`);
     console.log(`OS: ${selectedOS}`);
     console.log(`Hostname: ${hostname}`);
-    console.log(`Billing: ${billingType}`);
     if (sshKeys.length > 0) console.log(`SSH Keys: ${sshKeys.length} key(s)`);
     if (tags.length > 0) console.log(`Tags: ${tags.join(", ")}`);
     if (userData) console.log(`User Data: Yes`);
@@ -348,11 +362,10 @@ async function createServerSmart() {
 
     const serverConfig = {
       project: selectedProject.id,
-      plan: selectedPlan,
+      plan: selectedPlanId,
       operating_system: selectedOS,
       hostname: hostname,
       site: selectedRegion,
-      billing_type: billingType.toLowerCase(),
       ...(sshKeys.length > 0 && { sshKeys }),
       ...(tags.length > 0 && { tags }),
       ...(userData && { userData }),

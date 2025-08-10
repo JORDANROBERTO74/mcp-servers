@@ -14,16 +14,14 @@ import type {
   LatitudeAPIParams,
   LatitudeAPIServersResponse,
   LatitudeAPIServerResponse,
-  LatitudePlan,
-  LatitudePlanList,
   LatitudePlanRegion,
-  LatitudePlanResponse,
-  GlobalRegion,
-  GlobalRegionList,
-  GlobalRegionResponse,
+  LatitudeAPIPlanData,
+  LatitudeAPIPlanResponse,
+  LatitudeAPIPlansResponse,
   LatitudeServerDeployConfigResponse,
   LatitudeServerDeployConfig,
-  UpdateDeployConfigParams,
+  LatitudeOperatingSystem,
+  LatitudeOperatingSystemsResponse,
 } from "../types/latitude.js";
 
 export class LatitudeAPIClient {
@@ -49,10 +47,18 @@ export class LatitudeAPIClient {
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
+        const apiErrors = error?.response?.data?.errors;
+
+        const throwWith = (msg: string): never => {
+          const err: any = new Error(msg);
+          if (apiErrors) err.apiErrors = apiErrors;
+          throw err;
+        };
+
         if (error.response?.status === 401) {
-          throw new Error("Unauthorized: Invalid API key");
+          throwWith("Unauthorized: Invalid API key");
         } else if (error.response?.status === 403) {
-          throw new Error("Forbidden: Insufficient permissions");
+          throwWith("Forbidden: Insufficient permissions");
         } else if (error.response?.status === 404) {
           throw new Error("Project not found");
         } else if (
@@ -82,17 +88,17 @@ export class LatitudeAPIClient {
             );
           }
         } else if (error.response?.status === 429) {
-          throw new Error("Rate limit exceeded - please try again later");
+          throwWith("Rate limit exceeded - please try again later");
         } else if (error.response?.status >= 500) {
-          throw new Error("Latitude.sh API server error");
+          throwWith("Latitude.sh API server error");
         } else if (error.code === "ECONNABORTED") {
-          throw new Error("Request timeout - server took too long to respond");
+          throwWith("Request timeout - server took too long to respond");
         } else if (error.code === "ENOTFOUND") {
-          throw new Error("Network error - could not reach latitude.sh API");
+          throwWith("Network error - could not reach latitude.sh API");
         } else if (error.code === "ECONNREFUSED") {
-          throw new Error("Connection refused - check your network connection");
+          throwWith("Connection refused - check your network connection");
         } else {
-          throw new Error(
+          throwWith(
             `API Error: ${error.response?.data?.message || error.message}`
           );
         }
@@ -104,11 +110,11 @@ export class LatitudeAPIClient {
    * Get all projects for the authenticated user
    */
   async getProjects(
-    params?: ProjectSearchParams
+    params?: ProjectSearchParams & Record<string, unknown>
   ): Promise<LatitudeProjectList> {
     try {
       // Transform parameters to match Latitude.sh API format
-      const apiParams: LatitudeAPIParams = {};
+      const apiParams: Record<string, unknown> = {};
 
       // Handle new pagination parameters
       if (params?.["page[size]"]) {
@@ -161,14 +167,21 @@ export class LatitudeAPIClient {
 
       // Use the projects directly from the API response
       const projects = response.data.data;
-      const meta = response.data.meta?.pagination;
+      const pagination = (response.data.meta as any)?.pagination;
 
       return {
         projects,
-        total: meta?.total_count ?? projects.length,
+        total:
+          pagination?.total_count ??
+          (response.data.meta as any)?.total ??
+          projects.length,
         page:
-          meta?.current_page ?? params?.["page[number]"] ?? params?.page ?? 1,
-        limit: meta?.per_page ?? params?.["page[size]"] ?? params?.limit ?? 20,
+          pagination?.current_page ??
+          params?.["page[number]"] ??
+          params?.page ??
+          1,
+        limit:
+          pagination?.per_page ?? params?.["page[size]"] ?? params?.limit ?? 20,
       };
     } catch (error) {
       throw new Error(
@@ -223,7 +236,7 @@ export class LatitudeAPIClient {
   ): Promise<LatitudeProjectList> {
     // Map 'query' to filter[name]
     const mapped: ProjectSearchParams = { ...params, ["filter[name]"]: query };
-    return this.getProjects(mapped);
+    return this.getProjects(mapped as any);
   }
 
   // (Removed) getProjectsByStatus: Not supported by Latitude.sh API
@@ -429,7 +442,9 @@ export class LatitudeAPIClient {
   /**
    * Get all servers for the authenticated user
    */
-  async getServers(params?: ServerSearchParams): Promise<LatitudeServerList> {
+  async getServers(
+    params?: ServerSearchParams & Record<string, unknown>
+  ): Promise<LatitudeServerList> {
     try {
       // Transform parameters to match Latitude.sh API format
       const apiParams: LatitudeAPIParams = {};
@@ -509,14 +524,21 @@ export class LatitudeAPIClient {
 
       // Use the servers directly from the API response
       const servers = response.data.data;
-      const meta = response.data.meta?.pagination;
+      const pagination = (response.data.meta as any)?.pagination;
 
       return {
-        servers,
-        total: meta?.total_count ?? servers.length,
+        servers: servers as unknown as LatitudeServerDetails[],
+        total:
+          pagination?.total_count ??
+          (response.data.meta as any)?.total ??
+          servers.length,
         page:
-          meta?.current_page ?? params?.["page[number]"] ?? params?.page ?? 1,
-        limit: meta?.per_page ?? params?.["page[size]"] ?? params?.limit ?? 20,
+          pagination?.current_page ??
+          params?.["page[number]"] ??
+          params?.page ??
+          1,
+        limit:
+          pagination?.per_page ?? params?.["page[size]"] ?? params?.limit ?? 20,
       };
     } catch (error) {
       throw new Error(
@@ -573,11 +595,17 @@ export class LatitudeAPIClient {
         data: {
           type: "servers",
           attributes: {
-            project: serverData.project,
-            plan: serverData.plan,
-            operating_system: serverData.operating_system,
             hostname: serverData.hostname,
-            site: serverData.site,
+            project_id: serverData.projectId,
+            // Latitude JSON:API commonly uses `site` for region code in creation
+            site: serverData.regionId,
+            plan_id: serverData.planId,
+            ...(serverData.operating_system && {
+              operating_system: serverData.operating_system,
+            }),
+            ...(serverData.description && {
+              description: serverData.description,
+            }),
             ...(serverData.sshKeys &&
               serverData.sshKeys.length > 0 && {
                 ssh_keys: serverData.sshKeys,
@@ -695,27 +723,11 @@ export class LatitudeAPIClient {
   }
 
   /**
-   * Get available plans
-   */
-  async getAvailablePlans(): Promise<LatitudePlan[]> {
-    try {
-      const response = await this.client.get<LatitudePlanList>("/plans");
-      return response.data.data || [];
-    } catch (error) {
-      throw new Error(
-        `Failed to fetch available plans: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-    }
-  }
-
-  /**
    * Get a single plan by ID
    */
-  async getPlan(planId: string): Promise<LatitudePlan> {
+  async getPlan(planId: string): Promise<LatitudeAPIPlanData> {
     try {
-      const response = await this.client.get<LatitudePlanResponse>(
+      const response = await this.client.get<LatitudeAPIPlanResponse>(
         `/plans/${planId}`
       );
       return response.data.data;
@@ -729,17 +741,41 @@ export class LatitudeAPIClient {
   }
 
   /**
-   * Get available regions for a specific plan
+   * List all plans
    */
-  async getAvailableRegions(planSlug: string): Promise<LatitudePlanRegion[]> {
+  async listPlans(): Promise<LatitudeAPIPlanData[]> {
     try {
-      const response = await this.client.get<LatitudePlanResponse>(
-        `/plans/${planSlug}`
+      const response = await this.client.get<LatitudeAPIPlansResponse>(
+        `/plans`
       );
-      return response.data.data.attributes.regions || [];
+      if (!response.data?.data) {
+        throw new Error("Invalid API response: missing data");
+      }
+      return response.data.data;
     } catch (error) {
       throw new Error(
-        `Failed to fetch available regions for plan ${planSlug}: ${
+        `Failed to fetch plans: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * Get available regions for a specific plan
+   */
+  async getAvailableRegions(
+    planId: string,
+    _projectId?: string
+  ): Promise<LatitudePlanRegion[]> {
+    try {
+      // Use getPlan internally since it works and returns regions
+      const plan = await this.getPlan(planId);
+      return (plan.attributes?.regions ||
+        []) as unknown as LatitudePlanRegion[];
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch available regions for plan ${planId}: ${
           error instanceof Error ? error.message : String(error)
         }`
       );
@@ -749,9 +785,9 @@ export class LatitudeAPIClient {
   /**
    * List all regions (global regions endpoint)
    */
-  async listRegions(): Promise<GlobalRegion[]> {
+  async listRegions(): Promise<any[]> {
     try {
-      const response = await this.client.get<GlobalRegionList>(`/regions`);
+      const response = await this.client.get<any>(`/regions`);
       return response.data.data || [];
     } catch (error) {
       throw new Error(
@@ -765,11 +801,9 @@ export class LatitudeAPIClient {
   /**
    * Get a specific region by ID
    */
-  async getRegion(regionId: string): Promise<GlobalRegion> {
+  async getRegion(regionId: string): Promise<any> {
     try {
-      const response = await this.client.get<GlobalRegionResponse>(
-        `/regions/${regionId}`
-      );
+      const response = await this.client.get<any>(`/regions/${regionId}`);
       return response.data.data;
     } catch (error) {
       throw new Error(
@@ -787,10 +821,9 @@ export class LatitudeAPIClient {
     serverId: string
   ): Promise<LatitudeServerDeployConfig> {
     try {
-      const response =
-        await this.client.get<LatitudeServerDeployConfigResponse>(
-          `/servers/${serverId}/deploy_config`
-        );
+      const response = await this.client.get<any>(
+        `/servers/${serverId}/deploy_config`
+      );
       return response.data.data;
     } catch (error) {
       throw new Error(
@@ -806,7 +839,19 @@ export class LatitudeAPIClient {
    */
   async updateServerDeployConfig(
     serverId: string,
-    attrs: UpdateDeployConfigParams
+    attrs: {
+      hostname?: string;
+      operating_system?: string;
+      raid?: string;
+      user_data?: number | null;
+      ssh_keys?: number[];
+      partitions?: Array<{
+        path: string;
+        size_in_gb: number;
+        filesystem_type: string;
+      }>;
+      ipxe_url?: string | null;
+    }
   ): Promise<LatitudeServerDeployConfig> {
     try {
       const payload = {
@@ -836,7 +881,7 @@ export class LatitudeAPIClient {
           `/servers/${serverId}/deploy_config`,
           payload
         );
-      return response.data.data;
+      return response.data.data as LatitudeServerDeployConfig;
     } catch (error) {
       throw new Error(
         `Failed to update deploy config for server ${serverId}: ${
@@ -858,17 +903,7 @@ export class LatitudeAPIClient {
       if (!response.data.data) {
         throw new Error("Invalid API response: missing data");
       }
-      const server = response.data.data;
-      const serverDetails: LatitudeServerDetails = {
-        ...server,
-        metadata: {
-          tags: server.attributes.tags || [],
-          category: "server",
-          framework: server.attributes.operating_system?.name || undefined,
-          language: undefined,
-        },
-      };
-      return serverDetails;
+      return response.data.data;
     } catch (error) {
       throw new Error(
         `Failed to lock server ${serverId}: ${
@@ -890,20 +925,32 @@ export class LatitudeAPIClient {
       if (!response.data.data) {
         throw new Error("Invalid API response: missing data");
       }
-      const server = response.data.data;
-      const serverDetails: LatitudeServerDetails = {
-        ...server,
-        metadata: {
-          tags: server.attributes.tags || [],
-          category: "server",
-          framework: server.attributes.operating_system?.name || undefined,
-          language: undefined,
-        },
-      };
-      return serverDetails;
+      return response.data.data;
     } catch (error) {
       throw new Error(
         `Failed to unlock server ${serverId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  /**
+   * List available operating systems
+   */
+  async listOperatingSystems(params?: {
+    "page[size]"?: number;
+    "page[number]"?: number;
+  }): Promise<LatitudeOperatingSystem[]> {
+    try {
+      const response = await this.client.get<LatitudeOperatingSystemsResponse>(
+        `/plans/operating_systems`,
+        { params }
+      );
+      return response.data?.data || [];
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch operating systems: ${
           error instanceof Error ? error.message : String(error)
         }`
       );

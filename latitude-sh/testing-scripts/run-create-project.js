@@ -1,10 +1,28 @@
 import { spawn } from "child_process";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+import { config } from "dotenv";
+import { resolve } from "path";
 import readline from "readline";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = dirname(__filename);
+
+// Load environment variables from .env.local
+config({ path: resolve(__dirname, ".env.local") });
+
+console.log("🚀 Interactive Project Creation Tool");
+console.log("=====================================");
+
+// Check if API key is configured
+if (!process.env.LATITUDE_API_KEY) {
+  console.error("❌ Error: LATITUDE_API_KEY environment variable is not set");
+  console.log("Please set your Latitude.sh API key in the .env.local file");
+  process.exit(1);
+}
+console.log("API Key configured: Yes");
 
 // Create readline interface
 const rl = readline.createInterface({

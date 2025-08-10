@@ -3,69 +3,37 @@
 import { spawn } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import { readFileSync } from "fs";
-
-// Load environment variables from .env.local
-try {
-  const envPath = new URL(".env.local", import.meta.url);
-  const envContent = readFileSync(envPath, "utf8");
-
-  envContent.split("\n").forEach((line) => {
-    const [key, ...valueParts] = line.split("=");
-    if (key && valueParts.length > 0) {
-      const value = valueParts.join("=").trim();
-      if (value && !value.startsWith("#")) {
-        process.env[key.trim()] = value.replace(/^["']|["']$/g, "");
-      }
-    }
-  });
-} catch (error) {
-  console.log("⚠️ Warning: Could not load .env.local file");
-}
+import { config } from "dotenv";
+import { resolve } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Get server ID and reason from command line arguments
+// Load environment variables from .env.local
+config({ path: resolve(__dirname, ".env.local") });
+
+// Get server ID from command line arguments
 const serverId = process.argv[2];
-const reason = process.argv[3] || "Server deletion requested via MCP server";
 
 if (!serverId) {
-  console.error("❌ Error: Server ID is required");
-  console.log("Usage: node run-delete-server.js <server_id> [reason]");
-  console.log("Example: node run-delete-server.js sv_MDEOaPBWWNwgB");
-  console.log(
-    "Example: node run-delete-server.js sv_MDEOaPBWWNwgB 'Server no longer needed'"
-  );
+  console.log("❌ Error: Server ID is required!");
+  console.log("Usage: node run-get-server.js <server_id>");
+  console.log("Example: node run-get-server.js my-server-id");
   process.exit(1);
 }
 
-console.log("🗑️ Deleting Server");
-console.log("==================");
-console.log(`📤 Server ID: ${serverId}`);
-console.log(`📝 Reason: ${reason}`);
-console.log("📤 Sending delete server request...");
+console.log(`🖥️ Getting Server Details: ${serverId}`);
+console.log("================================");
 
-// Check if API key is configured
-if (!process.env.LATITUDE_API_KEY) {
-  console.error("❌ Error: LATITUDE_API_KEY environment variable is not set");
-  console.log("Please set your Latitude.sh API key in the .env.local file");
-  process.exit(1);
-}
-
-console.log("API Key configured: Yes");
-
-// Request data for deleting a server
-const deleteServerData = {
+// Request data for getting a specific server
+const getServerData = {
   jsonrpc: "2.0",
   id: 1,
   method: "tools/call",
   params: {
-    name: "delete_server",
+    name: "get_server",
     arguments: {
-      server_id: serverId,
-      reason: reason,
-      confirm: true,
+      serverId: serverId,
     },
   },
 };
@@ -117,26 +85,33 @@ async function sendToMCPServer(requestData) {
   });
 }
 
-// Main execution
+// Main function
 async function main() {
   try {
-    console.log("\n📤 Sending request to MCP server...");
+    console.log("📤 Sending get server request...");
+    console.log(
+      "API Key configured:",
+      process.env.LATITUDE_API_KEY ? "Yes" : "No"
+    );
 
-    const response = await sendToMCPServer(deleteServerData);
+    const response = await sendToMCPServer(getServerData);
 
     console.log("\n📥 Response received:");
     console.log(JSON.stringify(response, null, 2));
 
     if (response.result && response.result.content) {
-      console.log("\n📋 Server Deletion Result:");
+      console.log("\n📋 Server Details:");
       console.log(response.result.content[0].text);
+    } else if (response.error) {
+      console.log("\n❌ Error getting server:");
+      console.log("Error:", response.error);
     } else {
       console.log("\n❌ Unexpected response format");
     }
   } catch (error) {
-    console.error("\n❌ Error:", error.message);
-    process.exit(1);
+    console.error("❌ Error getting server:", error.message);
   }
 }
 
-main();
+// Run the get server
+main().catch(console.error);
