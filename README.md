@@ -51,7 +51,7 @@ mcp-servers/
 - **Location**: `latitude-sh/`
 - **Description**: Comprehensive MCP server for Latitude.sh infrastructure management
 - **Features**:
-  - 23 MCP tools for complete infrastructure control
+  - 24 MCP tools for complete infrastructure control
   - Project management (CRUD operations)
   - Server lifecycle management
   - Smart server creation with validation
@@ -171,7 +171,7 @@ A: Absolutely! These servers are open source under the MIT license. Fork, modify
 ### Server-Specific Questions
 
 **Q: Does the Latitude.sh server support all API features?**
-A: The server implements 23 tools covering the most commonly used Latitude.sh API endpoints. Check the tool list in `latitude-sh/README.md` for complete coverage.
+A: The server implements 24 tools covering the most commonly used Latitude.sh API endpoints. Check the tool list in `latitude-sh/README.md` for complete coverage.
 
 **Q: Is the Weather server limited to the US?**
 A: Yes, the Weather server uses the National Weather Service API, which only provides data for United States territories.
