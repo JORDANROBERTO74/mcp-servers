@@ -33,7 +33,7 @@ mcp-servers/
 ├── latitude-sh/      # Latitude.sh infrastructure MCP server
 │   ├── src/          # TypeScript source code
 │   ├── dist/         # Compiled JavaScript
-│   ├── run-*.js      # 12 utility scripts
+│   ├── testing-scripts/ # 12 utility scripts (run-*.js)
 │   ├── README.md     # Server documentation
 │   └── USAGE.md      # Usage guide with examples
 ├── weather/          # Weather data MCP server
