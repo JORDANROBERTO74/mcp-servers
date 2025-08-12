@@ -33,7 +33,6 @@ mcp-servers/
 ├── latitude-sh/      # Latitude.sh infrastructure MCP server
 │   ├── src/          # TypeScript source code
 │   ├── dist/         # Compiled JavaScript
-│   ├── testing-scripts/ # 12 utility scripts (run-*.js)
 │   ├── README.md     # Server documentation
 │   └── USAGE.md      # Usage guide with examples
 ├── weather/          # Weather data MCP server
@@ -51,13 +50,13 @@ mcp-servers/
 - **Location**: `latitude-sh/`
 - **Description**: Comprehensive MCP server for Latitude.sh infrastructure management
 - **Features**:
-  - 24 MCP tools for complete infrastructure control
+  - 29 MCP tools for complete infrastructure control
   - Project management (CRUD operations)
   - Server lifecycle management
   - Smart server creation with validation
   - Plan and region availability checking
-  - 12 utility scripts for direct CLI usage
-- **Version**: v0.4.0
+  - Interactive scripts for guided workflows
+- **Version**: v0.5.0
 - **API Integration**: Latitude.sh REST API
 
 ### Weather Server

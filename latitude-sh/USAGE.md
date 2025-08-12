@@ -8,42 +8,35 @@ This comprehensive guide shows you how to use the Latitude.sh MCP server with pr
   - [1. Installation & Setup](#1-installation--setup)
   - [2. Basic Usage](#2-basic-usage)
 - [📁 Project Management Tools](#-project-management-tools)
+
   - [1. list_projects](#1-list_projects---list-all-projects)
   - [2. get_project](#2-get_project---get-project-details)
-  - [3. create_project](#3-create_project---create-new-project)
-  - [4. update_project](#4-update_project---update-existing-project)
-  - [5. delete_project](#5-delete_project---delete-project)
+
+  - [4. create_project](#4-create_project---create-new-project)
+  - [5. update_project](#5-update_project---update-existing-project)
+  - [6. delete_project](#6-delete_project---delete-project)
+
 - [🖥️ Server Management Tools](#️-server-management-tools)
+
   - [1. list_servers](#1-list_servers---list-all-servers)
   - [2. create_server](#2-create_server---create-new-server)
   - [3. get_server](#3-get_server---get-server-details)
   - [4. update_server](#4-update_server---update-server)
   - [5. delete_server](#5-delete_server---delete-server)
-- [🔒 Server Security Tools](#-server-security-tools)
-  - [1. lock_server](#1-lock_server---lock-a-server)
-  - [2. unlock_server](#2-unlock_server---unlock-a-server)
-- [🔄 Server Operations Tools](#-server-operations-tools)
-  - [1. run_server_action](#1-run_server_action---run-power-actions)
-  - [2. enter_rescue_mode](#2-enter_rescue_mode---enter-rescue-mode)
-  - [3. exit_rescue_mode](#3-exit_rescue_mode---exit-rescue-mode)
-  - [4. server_reinstall](#4-server_reinstall---reinstall-server)
-  - [5. schedule_server_deletion](#5-schedule_server_deletion---schedule-deletion)
-  - [6. unschedule_server_deletion](#6-unschedule_server_deletion---cancel-scheduled-deletion)
-- [🌐 Out of Band Access Tools](#-out-of-band-access-tools)
-  - [1. start_out_of_band_connection](#1-start_out_of_band_connection---start-oob-connection)
-  - [2. list_out_of_band_connections](#2-list_out_of_band_connections---list-oob-connections)
-  - [3. generate_ipmi_credentials](#3-generate_ipmi_credentials---generate-ipmi-credentials)
+
 - [📊 Plan and Region Tools](#-plan-and-region-tools)
-  - [1. list_plans](#1-list_plans---list-all-plans)
-  - [2. get_plan](#2-get_plan---get-plan-by-id)
-  - [3. list_regions](#3-list_regions---list-global-regions)
-  - [4. get_region](#4-get_region---get-region-by-id)
+  - [1. get_plan](#1-get_plan---get-plan-by-id)
+- [2. list_regions](#2-list_regions---list-global-regions)
+  - [3. get_region](#3-get_region---get-region-by-id)
 - [🔧 Utility Tools](#-utility-tools)
+
   - [1. test_connection](#1-test_connection---test-api-connection)
   - [2. get_server_deploy_config](#2-get_server_deploy_config---retrieve-deploy-config)
   - [3. update_server_deploy_config](#3-update_server_deploy_config---update-deploy-config)
-  - [4. list_operating_systems](#4-list_operating_systems---list-available-operating-systems)
-- [🚀 Smart Server Creation Workflow](#-smart-server-creation-workflow)
+  - [4. lock_server](#4-lock_server---lock-a-server)
+  - [5. unlock_server](#5-unlock_server---unlock-a-server)
+  - [6. list_operating_systems](#6-list_operating_systems---list-available-operating-systems)
+
 - [📱 Integration Examples](#-integration-examples)
   - [Using with Shell Scripts](#using-with-shell-scripts)
   - [Using with Python](#using-with-python)
@@ -153,25 +146,6 @@ npm run dev
 }
 ```
 
-### 3. `search_projects` - Search Projects
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 3,
-  "method": "tools/call",
-  "params": {
-    "name": "search_projects",
-    "arguments": {
-      "query": "machine learning",
-      "limit": 5
-    }
-  }
-}
-```
-
 ### 4. `create_project` - Create New Project
 
 **Request:**
@@ -188,7 +162,7 @@ npm run dev
       "description": "Machine learning experiments and model training",
       "environment": "Development",
       "provisioning_type": "on_demand",
-
+      "billing_type": "Normal",
       "billing_method": "Normal",
       "tags": ["ai", "machine-learning", "python"]
     }
@@ -436,276 +410,9 @@ npm run dev
 }
 ```
 
-## 🔒 Server Security Tools
-
-### 1. `lock_server` - Lock a Server
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 23,
-  "method": "tools/call",
-  "params": {
-    "name": "lock_server",
-    "arguments": { "serverId": "sv_VLMmAD8EOwop2" }
-  }
-}
-```
-
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 23,
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "🔒 Server locked successfully\n\n🖥️ **Practical Linen Chair** (ID: sv_VLMmAD8EOwop2)\n..."
-      }
-    ]
-  }
-}
-```
-
-### 2. `unlock_server` - Unlock a Server
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 24,
-  "method": "tools/call",
-  "params": {
-    "name": "unlock_server",
-    "arguments": { "serverId": "sv_VLMmAD8EOwop2" }
-  }
-}
-```
-
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 24,
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "🔓 Server unlocked successfully\n\n🖥️ **Practical Linen Chair** (ID: sv_VLMmAD8EOwop2)\n..."
-      }
-    ]
-  }
-}
-```
-
-## 🔄 Server Operations Tools
-
-### 1. `run_server_action` - Run Power Actions
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 18,
-  "method": "tools/call",
-  "params": {
-    "name": "run_server_action",
-    "arguments": {
-      "serverId": "sv_123456789",
-      "action": "power_off"
-    }
-  }
-}
-```
-
-### 2. `enter_rescue_mode` - Enter Rescue Mode
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 19,
-  "method": "tools/call",
-  "params": {
-    "name": "enter_rescue_mode",
-    "arguments": {
-      "serverId": "sv_123456789"
-    }
-  }
-}
-```
-
-### 3. `exit_rescue_mode` - Exit Rescue Mode
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 20,
-  "method": "tools/call",
-  "params": {
-    "name": "exit_rescue_mode",
-    "arguments": {
-      "serverId": "sv_123456789"
-    }
-  }
-}
-```
-
-### 4. `server_reinstall` - Reinstall Server
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 25,
-  "method": "tools/call",
-  "params": {
-    "name": "server_reinstall",
-    "arguments": {
-      "serverId": "sv_123456789"
-    }
-  }
-}
-```
-
-### 5. `schedule_server_deletion` - Schedule Deletion
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 26,
-  "method": "tools/call",
-  "params": {
-    "name": "schedule_server_deletion",
-    "arguments": {
-      "serverId": "sv_123456789",
-      "deletion_date": "2024-07-25T10:00:00Z"
-    }
-  }
-}
-```
-
-### 6. `unschedule_server_deletion` - Cancel Scheduled Deletion
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 27,
-  "method": "tools/call",
-  "params": {
-    "name": "unschedule_server_deletion",
-    "arguments": {
-      "serverId": "sv_123456789"
-    }
-  }
-}
-```
-
-## 🌐 Out of Band Access Tools
-
-### 1. `start_out_of_band_connection` - Start OOB Connection
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 28,
-  "method": "tools/call",
-  "params": {
-    "name": "start_out_of_band_connection",
-    "arguments": {
-      "serverId": "sv_123456789"
-    }
-  }
-}
-```
-
-### 2. `list_out_of_band_connections` - List OOB Connections
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 29,
-  "method": "tools/call",
-  "params": {
-    "name": "list_out_of_band_connections",
-    "arguments": {}
-  }
-}
-```
-
-### 3. `generate_ipmi_credentials` - Generate IPMI Credentials
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 30,
-  "method": "tools/call",
-  "params": {
-    "name": "generate_ipmi_credentials",
-    "arguments": {
-      "serverId": "sv_123456789"
-    }
-  }
-}
-```
-
 ## 📊 Plan and Region Tools
 
-### 1. `list_plans` - List All Plans
-
-**Request:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 14,
-  "method": "tools/call",
-  "params": {
-    "name": "list_plans",
-    "arguments": {}
-  }
-}
-```
-
-**Response:**
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 14,
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "💻 **Available Server Plans**\n\n🖥️ **c2.small.x86** (ID: plan_123)\n📊 Features: ssh, user_data\n💻 CPU: E-2234 @ 3.6GHz (4 cores)\n🧠 Memory: 32 GB\n💾 Storage: 1 X 500 GB SSD\n🌐 Network: 1 X 1 Gbit/s\n💰 Pricing: $0.18/hour, $92/month, $773/year\n🌍 Regions: 8 regions available\n   • Brazil: High stock (SAO, SAO2) - Instant deploy: ubuntu_24_04_x64_lts\n   • United States: Medium stock (NYC, CHI, MIA2) - Instant deploy: ubuntu_24_04_x64_lts\n   • Australia: Medium stock (SYD) - Instant deploy: ubuntu_24_04_x64_lts\n\n🖥️ **c2.medium.x86** (ID: plan_456)\n📊 Features: ssh, raid, user_data\n💻 CPU: E-2278G @ 3.4GHz (8 cores)\n🧠 Memory: 64 GB\n💾 Storage: 2 X 500 GB SSD\n🌐 Network: 1 X 10 Gbit/s\n💰 Pricing: $0.35/hour, $179/month, $1504/year\n🌍 Regions: 9 regions available\n   • Brazil: Low stock (SAO) - Instant deploy: ubuntu_22_04_x64_lts\n   • United States: Low stock (DAL, ASH) - Instant deploy: ubuntu_24_04_x64_lts, ubuntu_22_04_x64_lts\n\n---"
-      }
-    ]
-  }
-}
-```
-
-### 2. `get_plan` - Get Plan by ID
+### 1. `get_plan` - Get Plan by ID
 
 **Request:**
 
@@ -738,7 +445,7 @@ npm run dev
 }
 ```
 
-### 3. `list_regions` - List Global Regions
+### 2. `list_regions` - List Global Regions
 
 **Request:**
 
@@ -754,7 +461,7 @@ npm run dev
 }
 ```
 
-### 4. `get_region` - Get Region by ID
+### 3. `get_region` - Get Region by ID
 
 **Request:**
 
@@ -884,7 +591,42 @@ Updatable fields: hostname, operating_system, raid, user_data (integer or null),
 }
 ```
 
-### 4. `list_operating_systems` - List Available Operating Systems
+### 4. `lock_server` - Lock a Server
+
+**Request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 23,
+  "method": "tools/call",
+  "params": {
+    "name": "lock_server",
+    "arguments": { "serverId": "sv_VLMmAD8EOwop2" }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 23,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "🔒 Server locked successfully\n\n🖥️ **Practical Linen Chair** (ID: sv_VLMmAD8EOwop2)\n..."
+      }
+    ]
+  }
+}
+```
+
+### 5. `unlock_server` - Unlock a Server
+
+### 6. `list_operating_systems` - List Available Operating Systems
 
 Lists all operating systems available to deploy and reinstall. Supports optional pagination parameters `page[size]` and `page[number]` as per the official API.
 
@@ -943,95 +685,33 @@ Reference: [List all operating systems available](https://docs.latitude.sh/refer
 }
 ```
 
-## 🚀 Smart Server Creation Workflow
-
-### Complete Example: Creating a Production Web Server
-
-**Step 1: Get Creation Flow**
+**Request:**
 
 ```json
 {
-  "name": "get_server_creation_flow",
-  "arguments": {}
-}
-```
-
-**Step 2: Validate Configuration**
-
-```json
-{
-  "name": "validate_server_config",
-  "arguments": {
-    "project_id": "proj_123456789",
-    "plan": "plan_2X6KG5mA5yPBM",
-    "region": "NYC",
-    "operating_system": "ubuntu_24_04_x64_lts"
+  "jsonrpc": "2.0",
+  "id": 24,
+  "method": "tools/call",
+  "params": {
+    "name": "unlock_server",
+    "arguments": { "serverId": "sv_VLMmAD8EOwop2" }
   }
 }
 ```
 
-**Step 3: Create Server (if validation passes)**
+**Response:**
 
 ```json
 {
-  "name": "create_server",
-  "arguments": {
-    "project": "proj_123456789",
-    "plan": "plan_2X6KG5mA5yPBM",
-    "operating_system": "ubuntu_24_04_x64_lts",
-    "hostname": "production-web-01",
-    "site": "NYC",
-    "sshKeys": ["ssh_key_production"],
-    "tags": ["web", "production", "nginx"],
-    "userData": "IyEvYmluL2Jhc2gKYXB0LWdldCB1cGRhdGUgJiYgYXB0LWdldCBpbnN0YWxsIC15IG5naW54",
-    "startupScript": "systemctl enable nginx && systemctl start nginx"
-  }
-}
-```
-
-## 🚀 Smart Server Creation Workflow
-
-### Complete Example: Creating a Production Web Server
-
-**Step 1: Get Creation Flow**
-
-```json
-{
-  "name": "get_server_creation_flow",
-  "arguments": {}
-}
-```
-
-**Step 2: Validate Configuration**
-
-```json
-{
-  "name": "validate_server_config",
-  "arguments": {
-    "project_id": "proj_123456789",
-    "plan": "plan_2X6KG5mA5yPBM",
-    "region": "NYC",
-    "operating_system": "ubuntu_24_04_x64_lts"
-  }
-}
-```
-
-**Step 3: Create Server (if validation passes)**
-
-```json
-{
-  "name": "create_server",
-  "arguments": {
-    "project": "proj_123456789",
-    "plan": "plan_2X6KG5mA5yPBM",
-    "operating_system": "ubuntu_24_04_x64_lts",
-    "hostname": "production-web-01",
-    "site": "NYC",
-
-    "sshKeys": ["ssh_key_production"],
-    "tags": ["web", "production", "nginx"],
-    "userData": "IyEvYmluL2Jhc2gKYXB0LWdldCB1cGRhdGUgJiYgYXB0LWdldCBpbnN0YWxsIC15IG5naW54",
-    "startupScript": "systemctl enable nginx && systemctl start nginx"
+  "jsonrpc": "2.0",
+  "id": 24,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "🔓 Server unlocked successfully\n\n🖥️ **Practical Linen Chair** (ID: sv_VLMmAD8EOwop2)\n..."
+      }
+    ]
   }
 }
 ```
@@ -1051,25 +731,13 @@ PLAN="c2-small-x86"
 REGION="NYC"
 HOSTNAME="test-server-$(date +%s)"
 
-# First validate
-echo "Validating configuration..."
-VALIDATION=$(echo '{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "method": "tools/call",
-  "params": {
-    "name": "validate_server_config",
-    "arguments": {
-      "project_id": "'$PROJECT_ID'",
-      "plan": "'$PLAN'",
-      "region": "'$REGION'",
-      "operating_system": "ubuntu_24_04_x64_lts"
-    }
-  }
-}' | node dist/index.js)
-
-if echo "$VALIDATION" | grep -q "✅ Configuration is valid"; then
-  echo "Configuration valid, creating server..."
+# Check resource availability
+echo "Checking resource availability..."
+echo "Project ID: $PROJECT_ID"
+echo "Plan: $PLAN"
+echo "Region: $REGION"
+echo "OS: ubuntu_24_04_x64_lts"
+echo "Proceeding with server creation..."
   echo '{
     "jsonrpc": "2.0",
     "id": 2,
@@ -1081,8 +749,7 @@ if echo "$VALIDATION" | grep -q "✅ Configuration is valid"; then
         "plan": "'$PLAN'",
         "operating_system": "ubuntu_24_04_x64_lts",
         "hostname": "'$HOSTNAME'",
-        "site": "'$REGION'",
-
+        "site": "'$REGION'"
       }
     }
   }' | node dist/index.js
@@ -1128,27 +795,23 @@ def call_mcp_tool(tool_name, arguments):
 response = call_mcp_tool("list_projects", {"page[size]": 5})
 print(response["result"]["content"][0]["text"])
 
-# Example: Validate server config
-validation = call_mcp_tool("validate_server_config", {
-    "project_id": "proj_123456789",
+# Example: Check resource availability
+print("Checking resource availability...")
+print("Project ID: proj_123456789")
+print("Plan: c2-small-x86")
+print("Region: NYC")
+print("OS: ubuntu_24_04_x64_lts")
+print("Proceeding with server creation...")
+
+# Create server
+server = call_mcp_tool("create_server", {
+    "project": "proj_123456789",
     "plan": "c2-small-x86",
-    "region": "NYC",
-    "operating_system": "ubuntu_24_04_x64_lts"
+    "operating_system": "ubuntu_24_04_x64_lts",
+    "hostname": "python-created-server",
+    "site": "NYC"
 })
-
-if "✅ Configuration is valid" in validation["result"]["content"][0]["text"]:
-    # Create server
-    server = call_mcp_tool("create_server", {
-        "project": "proj_123456789",
-        "plan": "c2-small-x86",
-        "operating_system": "ubuntu_24_04_x64_lts",
-        "hostname": "python-created-server",
-        "site": "NYC",
-
-    })
-    print("Server created:", server["result"]["content"][0]["text"])
-else:
-    print("Configuration invalid:", validation["result"]["content"][0]["text"])
+print("Server created:", server["result"]["content"][0]["text"])
 ```
 
 ## ⚠️ Error Handling
@@ -1211,7 +874,7 @@ else:
 
 ### Error Recovery Strategies
 
-1. **Always validate first**: Use interactive scripts for guided server creation
+1. **Check resources first**: Use `list_projects`, `get_plan`, and `list_regions` before `create_server`
 2. **Check API connectivity**: Use `test_connection` if getting network errors
 3. **Verify resource existence**: Use `get_project` or `get_server` to confirm resources exist
 4. **Handle rate limits**: Implement exponential backoff for 429 responses
@@ -1222,40 +885,14 @@ else:
 ### 1. Server Creation Workflow
 
 ```json
-// 1. Always get the creation flow first
-{"name": "get_server_creation_flow", "arguments": {}}
+// 1. List available projects and plans
+{"name": "list_projects", "arguments": {}}
 
-// 2. Validate your configuration
-{"name": "validate_server_config", "arguments": {...}}
+// 2. Check resource availability
+{"name": "get_plan", "arguments": {"planId": "my-plan-id"}}
 
 // 3. Only create if validation passes
 {"name": "create_server", "arguments": {...}}
-```
-
-### 2. Server Security Workflow
-
-```json
-// 1. Lock server before maintenance
-{"name": "lock_server", "arguments": {"serverId": "sv_123"}}
-
-// 2. Perform operations (reinstall, rescue mode, etc.)
-{"name": "server_reinstall", "arguments": {...}}
-
-// 3. Unlock server when done
-{"name": "unlock_server", "arguments": {"serverId": "sv_123"}}
-```
-
-### 3. Server Operations Workflow
-
-```json
-// 1. Check server status
-{"name": "get_server", "arguments": {"serverId": "sv_123"}}
-
-// 2. Perform power action
-{"name": "run_server_action", "arguments": {"serverId": "sv_123", "action": "reboot"}}
-
-// 3. Monitor status changes
-{"name": "get_server", "arguments": {"serverId": "sv_123"}}
 ```
 
 ### 2. Resource Management
@@ -1271,9 +908,6 @@ else:
 - Use least-privilege API keys
 - Regularly rotate API keys
 - Monitor API usage
-- Lock servers before maintenance operations
-- Use OOB access for emergency situations
-- Implement proper access controls for IPMI
 
 ### 4. Performance
 
@@ -1298,17 +932,9 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"test_conne
 
 1. **Use validation first**: Always validate configuration before creation
 2. **Check project type**: Ensure project is on-demand
-3. **Verify region availability**: Use `list_regions` and `get_plan`
-4. **Check plan availability**: Use `list_plans`
+3. **Verify region availability**: Use `list_regions`
+4. **Check plan availability**: Use `get_plan`
 5. **Validate hostname uniqueness**: Ensure hostname is unique
-
-### Server Operations Issues
-
-1. **Power actions failing**: Check if server is locked using `get_server`
-2. **Rescue mode issues**: Ensure server is not in a transitional state
-3. **Reinstall failures**: Verify OS compatibility with server plan
-4. **OOB connection problems**: Check if server supports OOB access
-5. **IPMI access issues**: Verify server has IPMI capabilities
 
 ### Debug Mode
 
@@ -1319,4 +945,4 @@ NODE_ENV=development node dist/index.js 2>&1 | tee debug.log
 
 Note: By default, example responses show the exact API-like JSON returned inside `content[0].text`. Many utility scripts in `latitude-sh` print the full JSON response and then a readable summary.
 
-This comprehensive guide covers all available tools and their usage patterns. For additional help, use the `get_server_creation_flow` tool to get real-time guidance for server creation workflows.
+This comprehensive guide covers all available tools and their usage patterns. For additional help, use the individual tools like `list_projects`, `get_plan`, and `list_regions` to get real-time guidance for server creation workflows.
