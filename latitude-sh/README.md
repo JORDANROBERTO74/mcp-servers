@@ -1,12 +1,12 @@
 # Latitude.sh MCP Server
 
-[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](https://github.com/jordanroberto74/mcp-servers)
+[![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)](https://github.com/jordanroberto74/mcp-servers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-1.17.0-blue)](https://www.npmjs.com/package/@modelcontextprotocol/sdk)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8.2-blue)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6.2-blue)](https://www.typescriptlang.org/)
 
-A comprehensive Model Context Protocol (MCP) server that provides intelligent access to your Latitude.sh infrastructure, including projects, servers, plans, and smart server creation workflows.
+A comprehensive Model Context Protocol (MCP) server that provides intelligent access to your Latitude.sh infrastructure, including projects, servers, plans, regions, operating systems, and advanced server management capabilities.
 
 ## ⚠️ IMPORTANT: How to Use This Server
 
@@ -25,7 +25,10 @@ A comprehensive Model Context Protocol (MCP) server that provides intelligent ac
   - [🖥️ Server Management](#-server-management)
   - [🧠 Smart Server Creation](#-smart-server-creation)
   - [🔧 General Tools](#-general-tools)
-- [📋 Complete Tool List](#-complete-tool-list-24-tools)
+  - [🔒 Server Security](#-server-security)
+  - [🔄 Server Operations](#-server-operations)
+  - [🌐 Out of Band Access](#-out-of-band-access)
+- [📋 Complete Tool List](#-complete-tool-list-29-tools)
 - [🚀 Smart Server Creation Script](#-smart-server-creation-script)
 - [📦 Installation](#-installation)
 - [⚙️ Configuration](#️-configuration)
@@ -48,7 +51,6 @@ A comprehensive Model Context Protocol (MCP) server that provides intelligent ac
 
 - **List Projects**: Get all projects with filtering (name, slug, description, billing_type, environment, tags) and pagination
 - **Get Project Details**: Retrieve comprehensive project information
-- **Search Projects**: Search through names, descriptions, and metadata
 - **Create Projects**: Create new projects with custom configurations
 - **Update Projects**: Modify existing project settings
 - **Delete Projects**: Remove projects with confirmation protection
@@ -75,43 +77,65 @@ A comprehensive Model Context Protocol (MCP) server that provides intelligent ac
 
 ### 🧠 Smart Server Creation
 
-- **Get Server Creation Flow**: Intelligent workflow with real-time validation
-- **Validate Server Config**: Pre-validate configurations before creation
-- **Get Available Plans**: List all plans with specifications and pricing
-- **Get Available Regions**: Check region availability for specific plans (argument `plan` accepts any plan ID string)
+- **Interactive Scripts**: Command-line scripts for guided server and project creation
+- **Validation Workflows**: Pre-validation and error prevention in creation processes
+
+### 🔒 Server Security
+
+- **Lock Server**: Prevent server modifications and actions
+- **Unlock Server**: Allow server modifications and actions
+
+### 🔄 Server Operations
+
+- **Power Actions**: Power on, power off, and reboot servers
+- **Rescue Mode**: Enter and exit rescue mode for system recovery
+- **Server Reinstall**: Reinstall servers with new configurations
+- **Schedule Deletion**: Schedule server deletion at billing cycle end
+- **IPMI Access**: Generate IPMI credentials for remote access
+
+### 🌐 Out of Band Access
+
+- **Start OOB Connection**: Create secure out-of-band connections
+- **List OOB Connections**: View active out-of-band connections
 
 ### 🔧 General Tools
 
 - **Test Connection**: Verify API connectivity and authentication
+- **List Operating Systems**: Get available operating systems for deployment
 
-## 📋 Complete Tool List (24 Tools)
+## 📋 Complete Tool List (29 Tools)
 
-| Tool                          | Description                      | Status                          |
-| ----------------------------- | -------------------------------- | ------------------------------- |
-| `list_projects`               | List projects with filtering     | ✅ Implemented                  |
-| `get_project`                 | Get detailed project info        | ✅ Implemented                  |
-| `search_projects`             | Search projects by query         | ✅ Implemented                  |
-| `create_project`              | Create new project               | ✅ Implemented                  |
-| `update_project`              | Update existing project          | ✅ Implemented                  |
-| `delete_project`              | Delete project                   | ✅ Implemented                  |
-| `list_servers`                | List servers with filtering      | ✅ Implemented                  |
-| `create_server`               | Create new server                | ✅ Implemented                  |
-| `get_server`                  | Get detailed server info         | ✅ Implemented                  |
-| `update_server`               | Update existing server           | ✅ Implemented (hostname, tags) |
-| `delete_server`               | Delete server                    | ✅ Implemented                  |
-| `get_available_plans`         | List all available plans         | ✅ Implemented                  |
-| `get_plan`                    | Get a specific plan by ID        | ✅ Implemented                  |
-| `get_available_regions`       | Get regions for specific plan    | ✅ Implemented                  |
-| `list_regions`                | List all global regions          | ✅ Implemented                  |
-| `get_region`                  | Get a specific global region     | ✅ Implemented                  |
-| `get_server_creation_flow`    | Smart creation workflow          | ✅ Implemented                  |
-| `validate_server_config`      | Pre-validate server config       | ✅ Implemented                  |
-| `test_connection`             | Test API connection              | ✅ Implemented                  |
-| `get_server_deploy_config`    | Get server deploy config         | ✅ Implemented                  |
-| `update_server_deploy_config` | Update server deploy config      | ✅ Implemented                  |
-| `lock_server`                 | Lock a server                    | ✅ Implemented                  |
-| `unlock_server`               | Unlock a server                  | ✅ Implemented                  |
-| `list_operating_systems`      | List available operating systems | ✅ Implemented                  |
+| Tool                           | Description                      | Status         |
+| ------------------------------ | -------------------------------- | -------------- |
+| `list_projects`                | List projects with filtering     | ✅ Implemented |
+| `get_project`                  | Get detailed project info        | ✅ Implemented |
+| `create_project`               | Create new project               | ✅ Implemented |
+| `update_project`               | Update existing project          | ✅ Implemented |
+| `delete_project`               | Delete project                   | ✅ Implemented |
+| `list_servers`                 | List servers with filtering      | ✅ Implemented |
+| `create_server`                | Create new server                | ✅ Implemented |
+| `get_server`                   | Get detailed server info         | ✅ Implemented |
+| `update_server`                | Update existing server           | ✅ Implemented |
+| `delete_server`                | Delete server                    | ✅ Implemented |
+| `list_plans`                   | List all available plans         | ✅ Implemented |
+| `get_plan`                     | Get a specific plan by ID        | ✅ Implemented |
+| `list_regions`                 | List all global regions          | ✅ Implemented |
+| `get_region`                   | Get a specific global region     | ✅ Implemented |
+| `get_server_deploy_config`     | Get server deploy config         | ✅ Implemented |
+| `update_server_deploy_config`  | Update server deploy config      | ✅ Implemented |
+| `lock_server`                  | Lock a server                    | ✅ Implemented |
+| `unlock_server`                | Unlock a server                  | ✅ Implemented |
+| `list_operating_systems`       | List available operating systems | ✅ Implemented |
+| `start_out_of_band_connection` | Start OOB connection             | ✅ Implemented |
+| `list_out_of_band_connections` | List active OOB connections      | ✅ Implemented |
+| `run_server_action`            | Run power actions on server      | ✅ Implemented |
+| `generate_ipmi_credentials`    | Generate IPMI credentials        | ✅ Implemented |
+| `enter_rescue_mode`            | Enter server rescue mode         | ✅ Implemented |
+| `exit_rescue_mode`             | Exit server rescue mode          | ✅ Implemented |
+| `schedule_server_deletion`     | Schedule server deletion         | ✅ Implemented |
+| `unschedule_server_deletion`   | Cancel scheduled deletion        | ✅ Implemented |
+| `server_reinstall`             | Reinstall server                 | ✅ Implemented |
+| `test_connection`              | Test API connection              | ✅ Implemented |
 
 ## 🚀 Smart Server Creation Script
 
@@ -305,20 +329,107 @@ npm run start
 
 ```json
 {
-  "server_id": "sv_123456789", // Required: Server ID
-  "reason": "Server no longer needed", // Optional: Reason for deletion
-  "confirm": true // Required: Set to true to confirm deletion
+  "serverId": "sv_123456789", // Required: Server ID
+  "reason": "Server no longer needed" // Optional: Reason for deletion
 }
 ```
 
-#### `validate_server_config`
+### Server Security & Operations
+
+#### `lock_server` / `unlock_server`
 
 ```json
 {
-  "project_id": "proj_123456789", // Required: Project ID
-  "plan": "plan_2X6KG5mA5yPBM", // Required: Plan ID
-  "region": "NYC", // Required: Region code
-  "operating_system": "ubuntu_24_04_x64_lts" // Optional: OS to validate
+  "serverId": "sv_123456789" // Required: Server ID
+}
+```
+
+#### `run_server_action`
+
+```json
+{
+  "serverId": "sv_123456789", // Required: Server ID
+  "action": "power_on" // Required: power_on, power_off, or reboot
+}
+```
+
+#### `enter_rescue_mode` / `exit_rescue_mode`
+
+```json
+{
+  "serverId": "sv_123456789" // Required: Server ID
+}
+```
+
+#### `server_reinstall`
+
+```json
+{
+  "serverId": "sv_123456789", // Required: Server ID
+  "operating_system": "ubuntu_24_04_x64_lts", // Optional: New OS
+  "hostname": "new-hostname", // Optional: New hostname
+  "sshKeys": ["ssh_key_123"], // Optional: SSH key IDs
+  "userData": "#!/bin/bash\necho hello", // Optional: User data script
+  "raid": "raid-1", // Optional: RAID configuration
+  "partitions": [
+    // Optional: Partition configuration
+    {
+      "path": "/",
+      "size_in_gb": 300,
+      "filesystem_type": "ext4"
+    }
+  ]
+}
+```
+
+#### `schedule_server_deletion` / `unschedule_server_deletion`
+
+```json
+{
+  "serverId": "sv_123456789" // Required: Server ID
+}
+```
+
+### Out of Band Access
+
+#### `start_out_of_band_connection`
+
+```json
+{
+  "serverId": "sv_123456789", // Required: Server ID
+  "sshKeyId": "ssh_key_123" // Optional: SSH key ID for authentication
+}
+```
+
+#### `generate_ipmi_credentials`
+
+```json
+{
+  "serverId": "sv_123456789" // Required: Server ID
+}
+```
+
+### Infrastructure Tools
+
+#### `list_plans`
+
+```json
+{
+  "filterName": "c2-small", // Optional: Filter by plan name
+  "filterSlug": "c2-small-x86", // Optional: Filter by plan slug
+  "filterLocation": "NYC", // Optional: Filter by location
+  "filterGpu": true, // Optional: Filter by GPU availability
+  "filterRamGte": 32, // Optional: Filter by minimum RAM (GB)
+  "filterDiskGte": 500 // Optional: Filter by minimum disk size (GB)
+}
+```
+
+#### `list_regions`
+
+```json
+{
+  "pageSize": 20, // Optional: Number of items per page
+  "pageNumber": 1 // Optional: Page number (starts at 1)
 }
 ```
 
@@ -328,8 +439,8 @@ Returns the catalogue of operating systems available for server deployment. Supp
 
 ```json
 {
-  "page[size]": 20,
-  "page[number]": 1
+  "pageSize": 20,
+  "pageNumber": 1
 }
 ```
 
@@ -412,11 +523,16 @@ latitude-sh/
 
 The server integrates with the Latitude.sh API using the following key endpoints:
 
+### Project Management
+
 - `GET /projects` - List projects (supports filter[name], filter[slug], filter[description], filter[billing_type], filter[environment], filter[tags], extra_fields[projects], page[size], page[number])
 - `POST /projects` - Create project
 - `GET /projects/{id}` - Get project details
 - `PATCH /projects/{id}` - Update project
 - `DELETE /projects/{id}` - Delete project
+
+### Server Management
+
 - `GET /servers` - List servers
 - `POST /servers` - Create server
 - `GET /servers/{id}` - Get server details
@@ -424,12 +540,31 @@ The server integrates with the Latitude.sh API using the following key endpoints
 - `DELETE /servers/{id}` - Delete server
 - `GET /servers/{id}/deploy_config` - Retrieve deploy configuration
 - `PATCH /servers/{id}/deploy_config` - Update deploy configuration
+
+### Server Security & Operations
+
 - `POST /servers/{id}/lock` - Lock server
 - `POST /servers/{id}/unlock` - Unlock server
+- `POST /servers/{id}/actions` - Run power actions (power_on, power_off, reboot)
+- `POST /servers/{id}/rescue` - Enter rescue mode
+- `DELETE /servers/{id}/rescue` - Exit rescue mode
+- `POST /servers/{id}/reinstall` - Reinstall server
+- `POST /servers/{id}/schedule_deletion` - Schedule server deletion
+- `DELETE /servers/{id}/schedule_deletion` - Cancel scheduled deletion
+
+### Out of Band Access
+
+- `POST /servers/{id}/out_of_band` - Start OOB connection
+- `GET /servers/{id}/out_of_band` - List OOB connections
+- `POST /servers/{id}/ipmi` - Generate IPMI credentials
+
+### Infrastructure
+
 - `GET /plans` - List available plans
 - `GET /plans/{planId}` - Get a specific plan (includes attributes.regions with pricing)
 - `GET /regions` - List global regions
 - `GET /regions/{id}` - Get specific global region
+- `GET /operating-systems` - List available operating systems
 - `GET /user/profile` - Test connection
 
 ### Authentication
@@ -493,7 +628,7 @@ For issues and questions:
 2. **Verify API Key**: Ensure your API key is correct and has proper permissions
 3. **Test Connection**: Use the `test_connection` tool to verify connectivity
 4. **Check Documentation**: Review the Latitude.sh API documentation
-5. **Validate Configuration**: Use `validate_server_config` before creating servers
+5. **Validate Configuration**: Use interactive scripts for guided server creation
 
 ## 📋 FAQ (Frequently Asked Questions)
 
@@ -508,16 +643,25 @@ A: This MCP server provides programmatic access through AI assistants and automa
 **Q: Can I use this server in production?**
 A: Yes, but ensure you follow security best practices, use proper API key management, and implement monitoring.
 
-### Server Creation
+### Server Creation & Management
 
-**Q: Why should I use `validate_server_config` before creating servers?**
-A: Validation prevents expensive failed deployments by checking project type, plan availability, and region stock before creation.
+**Q: Why should I use the interactive scripts for server creation?**
+A: Interactive scripts provide guided workflows that prevent expensive failed deployments by checking project type, plan availability, and region stock before creation.
 
 **Q: What's the smart server creation flow?**
 A: It's an intelligent workflow that guides you through project selection, plan choice, region availability, and configuration validation.
 
 **Q: Can I create servers in reserved projects?**
 A: No, server creation is only supported for on-demand projects. Reserved projects require different provisioning workflows.
+
+**Q: What server operations can I perform?**
+A: You can perform power actions (on/off/reboot), enter/exit rescue mode, reinstall servers, and schedule/unschedule deletions.
+
+**Q: How do I secure my servers?**
+A: Use the `lock_server` tool to prevent modifications and actions, and `unlock_server` when you need to make changes.
+
+**Q: What is Out of Band (OOB) access?**
+A: OOB access provides secure remote access to servers even when the main network is down, useful for troubleshooting and recovery.
 
 ### API and Authentication
 
@@ -554,10 +698,19 @@ A: Always check response `isError` flags, implement retry logic for rate limits,
 
 ## 📝 Changelog
 
-### v0.4.0 (Current)
+### v0.5.0 (Current)
+
+- **Expanded Tool Set**: Added 5 new tools for comprehensive server management
+- **Advanced Server Operations**: Power actions, rescue mode, server reinstall, and scheduled deletion
+- **Out of Band Access**: OOB connections and IPMI credentials generation
+- **Enhanced Security**: Server locking/unlocking capabilities
+- **Complete API Coverage**: Now supports 29 tools covering all major Latitude.sh API endpoints
+- **Updated Documentation**: Comprehensive documentation for all new tools and features
+
+### v0.4.0
 
 - **Updated `update_server` Tool**: Now supports official API parameters (hostname, billing, tags, project)
-- **Complete Tool Documentation**: All 17 tools fully documented with examples
+- **Complete Tool Documentation**: All 24 tools fully documented with examples
 - **Enhanced Documentation**: Updated README.md and USAGE.md with accurate schemas
 - **Script Consolidation**: Streamlined to 12 essential scripts
 - **Improved Examples**: Real-world usage examples for all tools
@@ -565,9 +718,9 @@ A: Always check response `isError` flags, implement retry logic for rate limits,
 ### v0.3.0
 
 - **Smart Server Creation**: Added intelligent server creation workflow
-- **Pre-validation**: Added `validate_server_config` tool
-- **Enhanced Plans**: Added `get_available_plans` with detailed specifications
-- **Region Availability**: Added `get_available_regions` tool
+- **Interactive Scripts**: Added guided server creation workflows
+- **Enhanced Plans**: Added `list_plans` with detailed specifications
+- **Region Availability**: Added `list_regions` tool
 - **Improved Error Handling**: Better error messages and validation
 - **Updated Scripts**: Streamlined script collection with smart creation
 
